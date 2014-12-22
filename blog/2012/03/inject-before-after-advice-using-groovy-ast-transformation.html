@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<!--[if lt IE 7 ]><html class="ie ie6" lang="en"> <![endif]-->
+<!--[if IE 7 ]><html class="ie ie7" lang="en"> <![endif]-->
+<!--[if IE 8 ]><html class="ie ie8" lang="en"> <![endif]-->
+<!--[if (gte IE 9)|!(IE)]><!-->
+<html class="not-ie" lang="en">
+<!--<![endif]-->
+
+<head>
+    <meta charset="utf-8">
+    <title>Kandy Software ⊳ Services</title>
+
+    <meta name="author" content="Vijay Kandy">
+    <meta name="description" content="Software Development and Consultancy">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    <link href="../../../css/style.min.css" rel="stylesheet">
+    <link href="../../../css/font-awesome/font-awesome.css" rel="stylesheet">
+    <!--[if IE 7]>
+    <link href="../../../css/font-awesome/font-awesome-ie7.css" rel="stylesheet">
+    <![endif]-->
+
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800' rel='stylesheet' type='text/css'>
+
+    <!--[if lt IE 9]>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <script>
+        !window.jQuery && document.write(unescape('%3Cscript src="js/jquery-1.8.3.min.js"%3E%3C/script%3E'))
+    </script>
+
+    <link type="text/css" rel="stylesheet" href="../../../css/shCoreDefault.css"/>
+</head>
+
+<body>
+<header id="header">
+    <div class="navbar">
+        <div class="navbar-inner">
+            <div class="container">
+                <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </a>
+                <a class="brand" href="index.html">
+                    <b>Kandy</b>&nbsp;Software
+                </a>
+                <div class="nav-collapse">
+                    <ul class="nav">
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="services.html">Services</a></li>
+                        <li class="active"><a href="blog.html">Blog</a></li>
+                        <li><a href="about.html">About us</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div id="content" class="container">
+    <div class="hero-unit">
+        <h1>Inject Before/After advice using Groovy AST Transformation</h1>
+        <p>AOP like before/after advice using AST Transformation</p>
+    </div>
+
+    <hr />
+
+    <div class="row" id="post">
+        <div class="span12">
+            <article class="post single-post image-post">
+                <div class="entry-meta">
+                    <span class="entry-type"></span>
+                    <span class="entry-date">March 27th, 2012</span>
+                </div>
+
+                <div class="entry-content">
+If you are new to AST Trasformations in Groovy, please start with <a href="http://groovy.codehaus.org/Compile-time+Metaprogramming+-+AST+Transformations" target="_blank">Groovy documentation</a>. This post shows how to intercept a function call and provide AOP style around advice to it. There are other ways to achieve this behavior:
+<ol>
+    <li><a href="http://groovy.codehaus.org/Using+invokeMethod+and+getProperty" target="_blank">Using GroovyInterceptable</a></li>
+    <li><a href="http://static.springsource.org/spring/docs/2.5.x/reference/aop.html" target="_blank">Spring AOP</a></li>
+</ol>
+There are pros and cons to both approaches and your favorite search engine can point you to resources describing them in detail. I like using AST Transformations for this purpose because it's easier, has more flexibility and I have more control over program order.
+<h2>The Problem Statement</h2>
+Given a function like <code>SomethingService.addSomething()</code>, invoke <code>AopService.prologue()</code> before <code>addSomething()</code> is executed and invoke <code>AopService.epilogue()</code> after. Notice that <code>prologue()</code> and <code>epilogue()</code> have same number and type of parameters <em>but that's not a requirement</em>. That's what I meant by flexibility. You can implement this however you like but for the purpose of this article, I'll use the same function parameter types.
+<pre class="brush: groovy">
+public class SomethingService {
+    /**
+     * Inserts a new value into table.
+     */
+    def addSomething(String id, String value) {
+        def sql = new Sql(dataSource)
+        sql.executeUpdate("INSERT INTO table VALUES(?, ?)", [
+            id,
+            value
+        ])
+    }
+}</pre>
+<pre class="brush: groovy">
+public class AopService {
+    /**
+     * To be called before SomethingService#addSomething() is invoked.
+     */
+    def prologue(String id, String value) {
+    }
+
+    /**
+     * To be called after SomethingService#addSomething() is invoked.
+     */
+    def epilogue(String id, String value) {
+    }
+}</pre>
+<h2>Before advice</h2>
+Let's start with the simplest - before advice. The plan is to get hold of <code>addSomething()</code> - the target method's body, insert a function call as the first statement in the body. That's it.
+
+We need to annotate <code>addSomething()</code> with <code>@Before</code>, a method annotation. That tells Groovy compiler to give us access to method's AST. <code>@Before</code> has two elements - <code>service</code> and <code>method</code> - which represent the service name and it's method to invoke before executing <code>addSomething()</code>
+<pre class="brush: groovy; highlight: [5, 6]">
+public class SomethingService {
+    /**
+     * Inserts a new value into table.
+     */
+    @Before(service = "aopService", method = "prologue")
+    @After(service = "aopService", method = "epilogue")
+    def addSomething(String id, String value) {
+        def sql = new Sql(dataSource)
+        sql.executeUpdate("INSERT INTO table VALUES(?, ?)", [
+            id,
+            value
+        ])
+    }
+}</pre>
+Also, <code>BeforeASTTransformation</code> class is linked to <code>@Before</code> annotation. The transformation class is the callback that lets us modify <code>addSomething()</code>.
+<pre class="brush: java">
+package com.ksi.transformation;
+
+/**
+ * {@link Before} declares which service method to call before invoking the
+ * target method.
+ */
+@Retention(RetentionPolicy.SOURCE)
+@Target(ElementType.METHOD)
+@GroovyASTTransformationClass("com.ksi.transformation.BeforeASTTransformation")
+public @interface Before {
+    String service();
+
+    String method();
+}</pre>
+Remember that transformation class is the callback Groovy compiler executes when annotated source unit is found. So we now have access to <code>addSomething()</code> as an instance of <code><a href="http://groovy.codehaus.org/api/org/codehaus/groovy/ast/MethodNode.html" target="_blank">MethodNode</a></code>. <code>methodNode.getCode()</code> gives us all statements in the method body. We'll just need to push a call to <code>AopService.prologue()</code> as the first statement. In addition to <code>MethodNode</code>, Groovy compiler gives us the annotation used with the target method as an instance of <code>AnnotationNode</code>. We can read the elements of <code>@Before</code> and now we know service and method to invoke.
+
+To invoke the service, all we need to do is express <code>ApplicationHolder.getApplication().getMainContext().getBean(serviceName).methodName(parameters);</code> in AST. Note that serviceName and methodName are elements of <code>@Before</code> annotation. So the AST we need is:
+<pre class="brush: java">
+// Get ApplicationHolder
+ClassNode applicationHolder = new ClassNode(org.codehaus.groovy.grails.commons.ApplicationHolder.class);
+
+// ApplicationHolder.getApplication()
+Expression application = new StaticMethodCallExpression(applicationHolder, "getApplication", EMPTY_ARGUMENTS);
+
+// ApplicationHolder.getApplication().getMainContext()
+Expression appContext = new MethodCallExpression(application, "getMainContext", EMPTY_ARGUMENTS);
+
+// ApplicationHolder.getApplication().getMainContext().getBean(serviceName)
+Expression service = new MethodCallExpression(appContext, "getBean", new ConstantExpression(serviceName));
+
+// ApplicationHolder.getApplication().getMainContext().getBean(serviceName).method()
+Expression call = new MethodCallExpression(service, methodName, new ArgumentListExpression(parameters));</pre>
+After transformation here's how <code>addSomething</code> would look like. The hilighted line is inserted by transformation class:
+<pre class="brush: groovy; highlight: [6]">
+public class SomethingService {
+    /**
+     * Inserts a new value into table.
+     */
+    def addSomething(String id, String value) {
+        ApplicationHolder.getApplication().getMainContext().getBean("aopService").prologue(id, value);
+        def sql = new Sql(dataSource)
+        sql.executeUpdate("INSERT INTO table VALUES(?, ?)", [
+            id,
+            value
+        ])
+    }
+}</pre>
+Here's the complete AST transformation class that does all I've described above. Notice how <code>addBeforeCall()</code> inserts <code>AopService.prologue()</code> as the first statement in the method body. <code>addSomething</code>'s parameters are passed to <code>AopService.prologue()</code> as well. This is the reason we used same function type signatures.
+<pre class="brush: java">
+package com.ksi.transformation;
+
+/**
+ * Any method annotated with {@link Before} is transformed using this class by
+ * being made to invoke method in {@link Before} annotation.
+ */
+@GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
+public class BeforeASTTransformation implements ASTTransformation {
+
+    Logger logger = Logger.getLogger(BeforeASTTransformation.class);
+
+    /**
+     * Implements transformation.
+     *
+     * @see org.codehaus.groovy.transform.ASTTransformation#visit(org.codehaus.groovy.ast.ASTNode[],
+     *      org.codehaus.groovy.control.SourceUnit)
+     */
+    @Override
+    public void visit(ASTNode[] nodes, SourceUnit sourceUnit) {
+        if (nodes == null || nodes.length == 0 || nodes[0] == null || nodes[1] == null) {
+            return;
+        }
+
+        if (!(nodes[0] instanceof AnnotationNode) && !(nodes[1] instanceof MethodNode)) {
+            return;
+        }
+
+        MethodNode methodNode = (MethodNode) nodes[1];
+
+        ClassNode beforeNode = new ClassNode(com.ksi.transformation.Before.class);
+        for (AnnotationNode annotationNode : methodNode.getAnnotations(beforeNode)) {
+            addBeforeCall(annotationNode, methodNode);
+            break;
+        }
+    }
+
+    /**
+     * Inserts a method call as the first line in intercepted method's body.
+     *
+     * @param annotationNode
+     *            annotation on intercepted method
+     * @param methodNode
+     *            intercepted method
+     */
+    private void addBeforeCall(AnnotationNode annotationNode, MethodNode methodNode) {
+        String serviceName = annotationNode.getMember("service").getText();
+        String methodName = annotationNode.getMember("method").getText();
+        Parameter[] parameters = methodNode.getParameters();
+
+        BlockStatement methodBody = (BlockStatement) methodNode.getCode();
+        List&lt;Statement&gt; statements = methodBody.getStatements();
+
+        statements.add(0, invokeServiceAst(serviceName, methodName, parameters));
+    }
+
+    /**
+     * Creates AST for the following call:
+     *
+     * <code>
+     * ApplicationHolder.getApplication().getMainContext().getBean(serviceName).methodName(parameters);
+     * </code>
+     *
+     * @param serviceName
+     *            service bean name
+     * @param methodName
+     *            method in the service calss to invoke
+     * @param parameters
+     *            arguments from intercepted method.
+     * @return
+     */
+    private Statement invokeServiceAst(String serviceName, String methodName, Parameter[] parameters) {
+        ClassNode applicationHolder = new ClassNode(org.codehaus.groovy.grails.commons.ApplicationHolder.class);
+        Expression application = new StaticMethodCallExpression(applicationHolder, "getApplication", EMPTY_ARGUMENTS);
+        Expression appContext = new MethodCallExpression(application, "getMainContext", EMPTY_ARGUMENTS);
+        Expression service = new MethodCallExpression(appContext, "getBean", new ConstantExpression(serviceName));
+        Expression call = new MethodCallExpression(service, methodName, new ArgumentListExpression(parameters));
+        return new ExpressionStatement(call);
+    }
+}</pre>
+<h2>After advice</h2>
+Invoking a method call <em>after</em> target method executes is similar but as methods can have multiple return points, we can't just insert a call as the last line in the method body. Instead we'll accomplish it this way:
+<ol>
+    <li>Create a new private method with same function type signature but with a different name. So in our case, we'll add a new method called <code>$addSomething$</code> (notice the $ signs - you can use any another symbol Java allows) and remove <code>addSomething</code> method body and move it in to the newly added <code>$addSomething$</code> method.
+<pre class="brush: groovy; highlight: [8, 9, 10, 11, 12]">
+    def addSomething(String id, String value) {
+    }
+
+    /**
+     * Newly inserted method.
+     */
+    private def $addSomething$(String id, String value){
+        def sql = new Sql(dataSource)
+        sql.executeUpdate("INSERT INTO table VALUES(?, ?)", [
+            id,
+            value
+        ])
+    }</pre>
+You can add a new method by simply creating a new instance of <code>MethodNode</code> like so:
+<pre class="brush: java">
+// parent is SomethingService class
+ClassNode parent = forwardingMethod.getDeclaringClass();
+
+// methodName is $addSomething$
+String methodName = "$" + forwardingMethod.getName() + "$";
+
+// The rest of the function type signature is same as that of addSomething()
+ClassNode returnType = forwardingMethod.getReturnType();
+Parameter[] parameters = forwardingMethod.getParameters();
+ClassNode[] exceptions = forwardingMethod.getExceptions();
+
+// Move method body
+Statement body = forwardingMethod.getCode();
+MethodNode forwardedTo = new MethodNode(methodName, Modifier.PRIVATE, returnType, parameters, exceptions, body);
+
+// Add new method to SomethingService
+parent.addMethod(forwardedTo);</pre>
+</li>
+    <li>Have target method forward calls to newly added method. Also, capture the return value.
+<pre class="brush: groovy; highlight: [2]">
+    def addSomething(String id, String value) {
+        def __addSomething__ = $addSomething$(id, value)
+    }
+
+    /**
+     * Newly inserted method.
+     */
+    private def $addSomething$(String id, String value){
+        def sql = new Sql(dataSource)
+        sql.executeUpdate("INSERT INTO table VALUES(?, ?)", [
+            id,
+            value
+        ])
+    }</pre>
+AST for this step:
+<pre class="brush: java">
+BlockStatement methodBody = new BlockStatement();
+
+// Replace method body with call to forwarded function.
+Expression left = new VariableExpression("__" + methodNode.getName() + "__");
+Token assign = Token.newPlaceholder(Types.ASSIGN);
+Expression right = new MethodCallExpression(new VariableExpression("this"), forwardTo.getName(),
+        new ArgumentListExpression(methodNode.getParameters()));
+Expression assignment = new DeclarationExpression(left, assign, right);
+methodBody.addStatement(new ExpressionStatement(assignment));</pre>
+</li>
+    <li>
+In the target method, insert method call to be invoked last. Adjust the return statement.
+<pre class="brush: groovy; highlight: [2, 3, 4]">
+    def addSomething(String id, String value) {
+        def __addSomething__ = $addSomething$(id, value)
+        ApplicationHolder.getApplication().getMainContext().getBean("aopService").epilogue(id, value);
+        __addSomething__
+    }
+
+    /**
+     * Newly inserted method.
+     */
+    private def $addSomething$(String id, String value){
+        def sql = new Sql(dataSource)
+        sql.executeUpdate("INSERT INTO table VALUES(?, ?)", [
+            id,
+            value
+        ])
+    }</pre>
+</li>
+</ol>
+<code>@After</code> annnotation and it's transformation class are shown below.
+<pre class="brush: java">
+package com.ksi.transformation;
+
+/**
+ * {@link After} declares which service method to call after invoking the target
+ * method.
+ */
+@Retention(RetentionPolicy.SOURCE)
+@Target(ElementType.METHOD)
+@GroovyASTTransformationClass("com.ksi.AfterASTTransformation")
+public @interface After {
+    String service();
+
+    String method();
+}</pre>
+<pre class="brush: java">
+package com.ksi.transformation;
+
+/**
+ * Any method annotated with {@link After} is transformed using this class by
+ * being made to invoke method in {@link After} annotation.
+ */
+@GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
+public class AfterASTTransformation implements ASTTransformation {
+
+    Logger logger = Logger.getLogger(AfterASTTransformation.class);
+
+    /**
+     * Implements transformation.
+     *
+     * @see org.codehaus.groovy.transform.ASTTransformation#visit(org.codehaus.groovy.ast.ASTNode[],
+     *      org.codehaus.groovy.control.SourceUnit)
+     */
+    @Override
+    public void visit(ASTNode[] nodes, SourceUnit sourceUnit) {
+        if (nodes == null || nodes.length == 0 || nodes[0] == null || nodes[1] == null) {
+            return;
+        }
+
+        if (!(nodes[0] instanceof AnnotationNode) && !(nodes[1] instanceof MethodNode)) {
+            return;
+        }
+
+        MethodNode methodNode = (MethodNode) nodes[1];
+
+        ClassNode beforeNode = new ClassNode(com.ksi.transformation.After.class);
+        for (AnnotationNode annotationNode : methodNode.getAnnotations(beforeNode)) {
+            addAfterCall(annotationNode, methodNode);
+            break;
+        }
+    }
+
+    /**
+     * Adds a new method and forwards calls to this new method. For example, if
+     * the intercepted method is:
+     *
+     * &#064;After(service = &quot;interceptingService&quot;, method = &quot;afterIntercepting&quot;)
+     * def addNumbers(int x, int y) {
+     *     x + y
+     * }
+     *
+     * Then
+     * 1. A new method <code>$addNumbners</code> is added.
+     * 2. The intercepted method is modified as follows:
+     *
+     * def addNumbers(int x, int y) {
+     *     def __addNumbers__ = $addNumbers$(x, y)
+     *     interceptingService.afterIntercepting(x, y)
+     *     __addNumbers__
+     * }
+     *
+     * private def $addNumbers$(int x, int y) {
+     * }
+     *
+     * @param annotationNode
+     *            annotation on intercepted method
+     * @param methodNode
+     *            intercepted method
+     */
+    private void addAfterCall(AnnotationNode annotationNode, MethodNode methodNode) {
+        // Add new method to forward call
+        MethodNode forwardTo = addForwardToMethodAst(methodNode);
+
+        BlockStatement methodBody = new BlockStatement();
+
+        // Replace method body with call to forwarded function.
+        Expression left = new VariableExpression("__" + methodNode.getName() + "__");
+        Token assign = Token.newPlaceholder(Types.ASSIGN);
+        Expression right = new MethodCallExpression(new VariableExpression("this"), forwardTo.getName(),
+                new ArgumentListExpression(methodNode.getParameters()));
+        Expression assignment = new DeclarationExpression(left, assign, right);
+        methodBody.addStatement(new ExpressionStatement(assignment));
+
+        // Add call to 'after' method given in After annotation
+        String serviceName = annotationNode.getMember("service").getText();
+        String methodName = annotationNode.getMember("method").getText();
+        Parameter[] parameters = methodNode.getParameters();
+        methodBody.addStatement(invokeServiceAst(serviceName, methodName, parameters));
+
+        // Add return statement
+        methodBody.addStatement(new ExpressionStatement(left));
+
+        methodNode.setCode(methodBody);
+    }
+
+    /**
+     * Adds a new private method with the same body as forwarding method.
+     *
+     * @param forwardingMethod
+     *            the intercepted method.
+     * @return a new method to which calls are forwarded.
+     */
+    private MethodNode addForwardToMethodAst(MethodNode forwardingMethod) {
+        ClassNode parent = forwardingMethod.getDeclaringClass();
+        String methodName = "$" + forwardingMethod.getName() + "$";
+        ClassNode returnType = forwardingMethod.getReturnType();
+        Parameter[] parameters = forwardingMethod.getParameters();
+        ClassNode[] exceptions = forwardingMethod.getExceptions();
+        Statement body = forwardingMethod.getCode();
+        MethodNode forwardedTo = new MethodNode(methodName, Modifier.PRIVATE, returnType, parameters, exceptions, body);
+        parent.addMethod(forwardedTo);
+        return forwardedTo;
+    }
+
+    /**
+     * Creates AST for the following call:
+     *
+     * <code>
+     * ApplicationHolder.getApplication().getMainContext().getBean(serviceName).methodName(parameters);
+     * </code>
+     *
+     * @param serviceName
+     *            service bean name
+     * @param methodName
+     *            method in the service calss to invoke
+     * @param parameters
+     *            arguments from intercepted method.
+     * @return
+     */
+    private Statement invokeServiceAst(String serviceName, String methodName, Parameter[] parameters) {
+        ClassNode applicationHolder = new ClassNode(org.codehaus.groovy.grails.commons.ApplicationHolder.class);
+        Expression application = new StaticMethodCallExpression(applicationHolder, "getApplication", EMPTY_ARGUMENTS);
+        Expression appContext = new MethodCallExpression(application, "getMainContext", EMPTY_ARGUMENTS);
+        Expression service = new MethodCallExpression(appContext, "getBean", new ConstantExpression(serviceName));
+        Expression call = new MethodCallExpression(service, methodName, new ArgumentListExpression(parameters));
+        return new ExpressionStatement(call);
+    }
+}</pre>
+<h2>Additional Notes</h2>
+Notice that in case of an exception, the method call expression <code>AopService.epilogue()</code> may not get invoked. If you want an always executing after advice, use a try/finally block like so:
+<pre class="brush: groovy">
+    def addSomething(String id, String value) {
+        try {
+            $addSomething$(id, value)
+        } finally {
+            ApplicationHolder.getApplication().getMainContext().getBean("aopService").epilogue(id, value);
+        }
+    }
+
+    /**
+     * Newly inserted method.
+     */
+    $addSomething$(String id, String value){
+        def sql = new Sql(dataSource)
+        sql.executeUpdate("INSERT INTO table VALUES(?, ?)", [
+            id,
+            value
+        ])
+    }
+</pre>
+    
+                    <p><a href="#" title=""><i>Author</i></a></p>
+                </div>
+
+                <div class="clr"></div>
+
+                <section id="comments">
+
+                </section>
+            </article>
+        </div>
+    </div>
+</div>
+
+<p/>
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="span4">
+                <h3>Kandy Software Inc.</h3>
+                <ul>
+                    <li><a href="/index.html" title="">Home</a>
+                    </li>
+                    <li><a href="/services.html" title="">Services</a>
+                    </li>
+                    <li><a href="/about.html" title="">About us</a>
+                    </li>
+                    <li><a href="/contact.html" title="">Contact</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="span4 social-networks">
+                <h3>Stay in touch</h3>
+                <p>Stay in touch on social networks</p>
+                <a href="https://github.com/vkandy" title="Github" class="icon-github"></a>
+                <a href="https://www.linkedin.com/in/vijaykandy" title="Linked In" class="icon-linkedin"></a>
+            </div>
+            <div class="span4">
+                <h3>Newsletter</h3>
+                <p>Subscribe to our monthly newsletter and be the first to know about our news and special deals!</p>
+                <form>
+                    <input type="text" placeholder="Enter your E-mail" />
+                    <input type="submit" class="btn" value="Ok" />
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="footer-extra">
+        <div class="container">
+            <div class="row">
+                <div class="span4">
+                    &copy; 2013 Kandy Software Inc.
+                </div>
+                <div class="span4">
+                </div>
+                <div class="span4">
+                    <i class="icon-envelope"></i> &nbsp; admin@kandysoftware.com
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script type="text/javascript" src="../../../js/bootstrap.min.js"></script>
+<script type="text/javascript" src="../../../js/jquery.isotope.min.js"></script>
+<script type="text/javascript" src="../../../js/jquery.touchSwipe.js"></script>
+<script type="text/javascript" src="../../../js/jquery.hotkeys.min.js"></script>
+<script type="text/javascript" src="../../../js/functions.min.js?v=2"></script>
+<script type="text/javascript" src="../../../js/shCore.js"></script>
+<script type="text/javascript" src="../../../js/shBrushGroovy.js"></script>
+<script type="text/javascript" src="../../../js/shBrushJava.js"></script>
+<script type="text/javascript">SyntaxHighlighter.all();</script>
+</body>
+
+</html>

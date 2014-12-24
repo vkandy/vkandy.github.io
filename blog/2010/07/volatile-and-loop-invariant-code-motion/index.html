@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<!--[if lt IE 7 ]><html class="ie ie6" lang="en"> <![endif]-->
+<!--[if IE 7 ]><html class="ie ie7" lang="en"> <![endif]-->
+<!--[if IE 8 ]><html class="ie ie8" lang="en"> <![endif]-->
+<!--[if (gte IE 9)|!(IE)]><!-->
+<html class="not-ie" lang="en">
+<!--<![endif]-->
+
+<head>
+    <meta charset="utf-8">
+    <title>Kandy Software ⊳ Blog</title>
+
+    <meta name="author" content="Vijay Kandy">
+    <meta name="description" content="Software Development and Consultancy">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    <link href="../../../../css/style.min.css" rel="stylesheet">
+    <link href="../../../../css/font-awesome/font-awesome.css" rel="stylesheet">
+    <!--[if IE 7]>
+    <link href="../../../../css/font-awesome/font-awesome-ie7.css" rel="stylesheet">
+    <![endif]-->
+
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800' rel='stylesheet' type='text/css'>
+
+    <!--[if lt IE 9]>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <script>
+        !window.jQuery && document.write(unescape('%3Cscript src="js/jquery-1.8.3.min.js"%3E%3C/script%3E'))
+    </script>
+
+    <link type="text/css" rel="stylesheet" href="../../../../css/shCoreDefault.css"/>
+</head>
+
+<body>
+<header id="header">
+    <div class="navbar">
+        <div class="navbar-inner">
+            <div class="container">
+                <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </a>
+                <a class="brand" href="../../../../../../">
+                    <b>Kandy</b>&nbsp;Software
+                </a>
+                <div class="nav-collapse">
+                    <ul class="nav">
+                        <li><a href="../../../../../../">Home</a></li>
+                        <li><a href="../../../../services">Services</a></li>
+                        <li class="active"><a href="../../../../blog">Blog</a></li>
+                        <li><a href="../../../../about">About us</a></li>
+                        <li><a href="../../../../contact">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div id="content" class="container">
+    <div class="hero-unit">
+        <h1>Volatile and Loop Invariant Code Motion</h1>
+        <p>A demonstration of one of the optimization techniques used by Oracle Java compiler</p>
+        <small>Vijay Kandy&nbsp;&nbsp;<i class="icon-calendar"></i>&nbsp;July 7, 2010</small>
+    </div>
+
+    <hr />
+
+    <div class="row" id="post">
+        <div class="span12">
+            <article class="post single-post image-post">
+                <p>
+                    One of the code optimization techniques performed by the HotSpot compiler (C2) is Loop Invariant Code Motion. Loop invariants are values that do not change during execution of a loop, and so can be moved out of the loop, speeding up loop execution. For e.g., in the following loop, the expression <code>(x + y)</code> doesn't change during execution of the loop. Hence, its a loop invariant:
+                </p>
+
+<pre class="brush: java; first-line: 1;">
+int x,y;
+
+for (i = 0; i < SIZE; i++) {
+    a[i] = x + y;
+}
+</pre>
+
+                Compilers can safely move the expression <code>(x + y)</code> out of the loop or in other words, <em>hoist</em> the expression above the loop as shown here:
+
+<pre class="brush: java; first-line: 1;">
+int x,y;
+
+int temp = x + y;
+for (i = 0; i < SIZE; i++) {
+    a[i] = temp;
+}
+</pre>
+
+                Now, consider the following example.
+
+<pre class="brush: java; first-line: 1;">
+public class BusyTask implements Runnable {
+	private boolean stop;
+
+	public void shutdown() {
+		this.stop = true;
+	}
+
+	public void run() {
+		while (!stop) {
+		}
+		System.out.println("Busy task stopped");
+	}
+}
+</pre>
+
+<pre class="brush: java; first-line: 1;">
+public class ShutdownDriver {
+
+	public static void main(String[] s) {
+		BusyTask task = new BusyTask();
+		new Thread(task).start();
+
+		try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
+		task.shutdown();
+		System.out.println("BusyTask should stop now.");
+	}
+}
+</pre>
+
+                <p>
+                    Let's compile and run. I'll redirect the output to a file called before.log.
+                </p>
+
+<pre class="brush: bash; light: true;">
+vkandy@www:~/workspace/Hoisting$ $DEBUG_JAVA_HOME/bin/javac -d bin src/*.java
+vkandy@www:~/workspace/Hoisting$ $DEBUG_JAVA_HOME/bin/java -server -XX:CompileCommand=print,*BusyTask.run -cp bin ShutdownDriver > before.log 2>/dev/null
+</pre>
+
+                <p>
+                    <a href="http://jeremymanson.blogspot.com/2007/03/loop-invariant-code-motion-and-java.html" target="_blank">As Jeremy Manson explains</a>, this program is <b>not guaranteed to terminate</b>. An examination of code after compiler is done with optimization, shows why. The following is the JIT'd <code>BusyTask.run()</code> method:
+                </p>
+
+<pre class="brush: text; first-line: 41; highlight: [67, 68, 69, 70]">
+000   N79: #	B1 <- BLOCK HEAD IS JUNK   Freq: 1
+000   	INT3
+      	NOP 	# 3 bytes pad for loops and calls
+
+008   B1: #	B7 B2 <- BLOCK HEAD IS JUNK   Freq: 1
+008   	# stack bang
+	PUSHL  EBP
+	SUB    ESP,24	# Create frame
+016   	MOV    EBP,[ECX]
+018   	MOV    [ESP + #0],ECX
+01b   	CALL_LEAF,runtime  OSR_migration_end
+        No JVM State Info
+        #
+020   	MOV    ECX,[EBP + #4]
+023   	NullCheck EBP
+023
+023   B2: #	B5 B3 <- B1  Freq: 0.999999
+023   	CMPu   ECX,precise klass BusyTask: 0x0a0116c0:Constant:exact *
+029   	Jne,us B5  P=0.000001 C=-1.000000
+029
+02b   B3: #	B6 B4 <- B2  Freq: 0.999998
+02b   	#checkcastPP of EBP
+02b   	MOVZX8 ECX,[EBP + #8]	# ubyte -> int ! Field BusyTask.stop
+02f   	TEST   ECX,ECX
+031   	Jne,s  B6  P=0.000000 C=416502.000000
+031
+033   B4: #	B4 <- B3 B4  top-of-loop Freq: 1e-35
+033   	TSTL   #polladdr,EAX	! Safepoint: poll for GC        # BusyTask::run @ bci:7  L[0]=EBP
+        # OopMap{ebp=Oop off=51}
+039   	JMP,s  B4
+039
+03b   B5: #	N79 <- B2  Freq: 9.99999e-07
+03b   	MOV    ECX,#-75
+040   	NOP 	# 3 bytes pad for loops and calls
+043   	CALL,static  wrapper for: uncommon_trap(reason='unreached' action='reinterpret')
+        # BusyTask::run @ bci:0  L[0]=EBP
+        # OopMap{ebp=Oop off=72}
+048   	INT3   ; ShouldNotReachHere
+048
+04d   B6: #	N79 <- B3  Freq: 4.99999e-07
+04d   	MOV    ECX,#22
+052   	NOP 	# 1 bytes pad for loops and calls
+053   	CALL,static  wrapper for: uncommon_trap(reason='unloaded' action='reinterpret' index='22')
+        # BusyTask::run @ bci:10  L[0]=_
+        # OopMap{off=88}
+058   	INT3   ; ShouldNotReachHere
+</pre>
+
+                <p>
+                    I've hilighted the while loop code. The loop begins at label B4 and after 3 lines we jump back to label B4 - it's actually an infinite loop! Apart from <a href="http://openjdk.java.net/groups/hotspot/docs/HotSpotGlossary.html#safepoint" target="_blank">safepoint polling</a>, there's nothing else in the loop. What happened to reading the value of <code>stop</code> as we wrote in <code>BusyTask.run()</code> method?
+                </p>
+
+                <p>
+                    The answer is at label B3 (above B4). We read the value of <code>stop</code> and check if the value is <code>true</code> or <code>false</code> by performing an AND operation. If the value is <code>false</code>, we jump to label B6 and call <code>System.out.println</code>. We revert back to interpreter, if the call to static method (<code>System.out.println</code>) doesn't succeed. That's what the <a href="http://openjdk.java.net/groups/hotspot/docs/HotSpotGlossary.html#uncommonTrap" target="_blank">uncommon trap</a> refers to.
+                </p>
+
+                <p>
+                    In Java, the code at labels B3 and B4 would be something like this:
+                </p>
+<pre class="brush: java; first-line: 1;">
+        int temp = stop;                          // Label B3: load 'stop' field (stop == false)
+        if(temp1 & temp1 == 1) {                  // is it true or false? (temp == false)
+            while (true) {                        // Label B4:
+                                                  // Safepoint polling added
+            }
+        }
+        System.out.println("Busy task stopped!"); // Label B6: revert back to interpreter for execution
+</pre>
+
+                <h3>The visibility problem</h3>
+                <p>
+                    Why did the compiler reorder code this way? Because, this reordered code behaves the same way as the original version in a single-threaded environment and C2 doesn't know that we intend to change the value of <code>stop</code> by means of another thread. In a single-threaded program, the value of <code>stop</code> isn't going to change - it's a loop invariant! Hence, it can be safely moved out of the loop. So the compiler optimizes the loop by removing the need to check the value of <code>stop</code> each time. But by reordering code, C2 has altered the semantics of our program. The resulting program never terminates.
+                </p>
+
+                <p>
+                    Formally, if an action in one thread is visible to another thread, then the result of that action can be observed by the second thread. In order to guarantee that the results of one action are observable to a second action, <b>the first must happen before the second</b>. Because there is no <em>happens-before</em> relationship between the two threads, <code>BusyTask</code> never sees the update to <code>stop</code> performed by <code>ShutdownDriver</code>. The compiler detects that no writes are performed to <code>stop</code> in <code>BusyTask</code> and hoists  the <em>reading</em> of <code>stop</code> out of the loop, transforming it into an infinite loop.
+                </p>
+
+                <h3>The Fix</h3>
+                <p>
+                    The keyword <code>volatile</code> ensures <em>happens-before</em> relationship between the two threads. All actions on <code>volatile</code>s happen in a single order, and each write to a <code>volatile</code> field happens before any read of that <code>volatile</code> that occurs later in that order. Since <a href="http://jcp.org/aboutJava/communityprocess/review/jsr133/index.html" target="_blank">JSR 133</a>, the <a href="http://www.ibm.com/developerworks/library/j-jtp03304/#2.0" target="_blank">Java Memory Model ensures this guarantee</a> for <code>volatile</code>. It also places <a href="http://today.java.net/article/2004/04/06/jsr-133-public-review" target="_blank">restrictions</a> on the scope of <a href="http://www.cs.umd.edu/~pugh/java/memoryModel/jsr-133-faq.html#reordering" target="_blank">reorderings</a> in the presence of synchronization, and this is how we guarantee that threads can have a consistent view of variables shared across more than one thread.
+                </p>
+
+                <p>
+                    So the fix is to declare <code>stop</code> as <code>volatile</code>. The other way is to synchronize all reads and writes on <code>stop</code> (using a common lock).
+                </p>
+
+<pre class="brush: java; first-line: 1;">
+public class BusyTask implements Runnable {
+	private volatile boolean stop;
+
+	public void shutdown() {
+		this.stop = true;
+	}
+
+	public void run() {
+		while (!stop) {
+		}
+		System.out.println("Busy task stopped");
+	}
+}
+</pre>
+
+                <p>
+                    Let's compile and run. I'll redirect the output to a file called after.log.
+                </p>
+
+<pre class="brush: bash; light: true;">
+vkandy@www:~/workspace/Hoisting$ $DEBUG_JAVA_HOME/bin/javac -d bin src/*.java
+vkandy@www:~/workspace/Hoisting$ $DEBUG_JAVA_HOME/bin/java -server -XX:CompileCommand=print,*BusyTask.run -cp bin ShutdownDriver > after.log 2>/dev/null
+</pre>
+
+                <p>
+                    Following is <code>BusyTask.run()</code> code after making <code>stop</code> as <code>volatile</code>:
+                </p>
+
+<pre class="brush: text; first-line: 41; highlight: [70, 71, 72, 73, 74, 75, 76]">
+000   N91: #	B1 <- BLOCK HEAD IS JUNK   Freq: 1
+000   	INT3
+      	NOP 	# 3 bytes pad for loops and calls
+
+008   B1: #	B7 B2 <- BLOCK HEAD IS JUNK   Freq: 1
+008   	# stack bang
+	PUSHL  EBP
+	SUB    ESP,24	# Create frame
+016   	MOV    EBX,[ECX]
+018   	MOV    [ESP + #0],ECX
+01b   	CALL_LEAF,runtime  OSR_migration_end
+        No JVM State Info
+        #
+020   	MOV    ECX,[EBX + #4]
+023   	NullCheck EBX
+023
+023   B2: #	B6 B3 <- B1  Freq: 0.999999
+023   	CMPu   ECX,precise klass BusyTask: 0x082ea6c0:Constant:exact *
+029   	Jne,us B6  P=0.000001 C=-1.000000
+029
+02b   B3: #	B5 B4 <- B2  Freq: 0.999998
+02b   	#checkcastPP of EBX
+02b   	LEA    ECX,[EBX + #8]
+02e   	MOVZX8 EAX,[ECX]	# ubyte -> int ! Field  VolatileBusyTask.stop
+031   	MEMBAR-acquire ! (empty encoding)
+031   	TEST   EAX,EAX
+033   	Jne,s  B5  P=0.000000 C=384208.000000
+      	NOP 	# 11 bytes pad for loops and calls
+
+040   B4: #	B4 B5 <- B3 B4 	Loop: B4-B4 inner  Freq: 999998
+040   	TSTL   #polladdr,EAX	! Safepoint: poll for GC        # BusyTask::run @ bci:7  L[0]=EBX
+        # OopMap{ecx=Derived_oop_ebx ebx=Oop off=64}
+046   	MOVZX8 EDX,[ECX]	# ubyte -> int ! Field  VolatileBusyTask.stop
+049   	MEMBAR-acquire ! (empty encoding)
+049   	TEST   EDX,EDX
+04b   	Je,s  B4  P=1.000000 C=384208.000000
+04b
+04d   B5: #	N91 <- B4 B3  Freq: 0.999998
+04d   	MOV    ECX,#22
+052   	NOP 	# 1 bytes pad for loops and calls
+053   	CALL,static  wrapper for: uncommon_trap(reason='unloaded' action='reinterpret' index='22')
+        # BusyTask::run @ bci:10  L[0]=_
+        # OopMap{off=88}
+058   	INT3   ; ShouldNotReachHere
+</pre>
+
+                <h3>Observations</h3>
+                <p>
+                    I've hilighted the while loop which begins at label B4. Observe that the field <code>stop</code> is now read (<code>MOVZX8 EDX,[ECX]</code>) and checked (<code>TEST   EDX,EDX</code>) in the loop. If the value is <code>false</code> we jump back to label B4. Here's a slightly cleaned up version:
+                </p>
+
+<pre class="brush: text;">
+040   B4:                            ; Loop begins here
+040   	TSTL   #polladdr,EAX         ; Safepoint polling
+046   	MOVZX8 EDX,[ECX]             ; Load value of stop to a temp variable
+049   	TEST   EDX,EDX               ; check the value of this temp variable
+04b   	Je,s  B4                     ; If value == true, continue looping
+</pre>
+
+                <p>
+                    By making <code>stop</code> as <code>volatile</code>, the compiler enforces <em>happens-before</em> relationship between the two threads so the writes performed on <code>stop</code> by <code>ShutdownDriver</code> are observed in <code>Busytask</code>.
+                </p>
+
+                <p>
+                    One other thing. Take a look at the code starting at label B3 (after a slight cleanup):
+                </p>
+
+<pre class="brush: text;">
+02b   B3:                            ;
+02b   	LEA    ECX,[EBX + #8]        ; Read value of stop
+02e   	MOVZX8 EAX,[ECX]             ; Load value of stop to a temp variable
+031   	TEST   EAX,EAX               ; check the value of temp variable
+033   	Jne,s  B5                    ; if value == false, jump to B5
+      	NOP
+
+040   B4:                            ; loop begins here
+040   	TSTL   #polladdr,EAX         ; Safepoint polling added
+046   	MOVZX8 EDX,[ECX]             ; Load stop to a temp variable
+049   	TEST   EDX,EDX               ; if value == true continue looping
+04b   	Je,s  B4
+
+04d   B5:
+04d   	MOV    ECX,#22                    ; At this label, execution goes back
+052   	NOP                               ; to interpreter.
+053   	CALL,static                       ; call to out.println()
+        # BusyTask::run @ bci:10  L[0]=_  ; Values needed to restore interpreter frame
+058   	INT3                              ; Can't come back here from interpreter
+</pre>
+
+                <p>
+                    Notice that there is still a test condition before the loop is executed. Also, in the loop (at label B4), the <code>TEST</code> instruction is executed just before the jump back to B4. In Java, this is how this logic would look:
+                </p>
+
+<pre class="brush: java; first-line: 1;">
+        int temp1 = stop;                         // Label B3: load 'stop' field (stop == false)
+        if(temp1 & temp1 == 1) {                  // is it true or false? (temp == false)
+            do {
+                                                  // Safepoint polling added
+                int temp2 = stop;                 // Label B4:
+            } while (temp2 & temp2 == 0)          // Compare and loop again ...
+        }
+        System.out.println("Busy task stopped!"); // Label B5: revert back to interpreter for execution
+</pre>
+
+                <p>
+                    The compiler transforms the <code>while</code> loop into an <code>if</code> block containing a <code>do...while</code> loop. This optimization technique is called <a href="http://en.wikipedia.org/wiki/Loop_inversion" target="_blank">loop inversion</a>.
+                </p>
+
+                <p>
+                    If you have any comments, suggestions or corrections please feel free to let me know.
+                </p>
+                <h3>Download Code and Logs</h3>
+                <a href='Hoisting.zip'>Source code and logs</a>
+            </article>
+        </div>
+    </div>
+
+    <div class="clr"></div>
+
+    <hr />
+
+    <div class="row">
+        <div class="span12">
+            <ul class="tags">
+                <li><a href="#">loop</a></li>
+                <li><a href="#">loop invariant</a></li>
+                <li><a href="#">loop optimization</a></li>
+                <li><a href="#">hoisting</a></li>
+                <li><a href="#">volatile</a></li>
+            </ul>
+
+            <section id="comments">
+            </section>
+        </div>
+    </div>
+</div>
+
+<p/>
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="span4">
+                <h3>Kandy Software Inc.</h3>
+                <ul>
+                    <li><a href="../../../../" title="">Home</a></li>
+                    <li><a href="../../../../services" title="">Services</a></li>
+                    <li><a href="../../../../about" title="">About us</a></li>
+                    <li><a href="../../../../contact" title="">Contact</a></li>
+                </ul>
+            </div>
+            <div class="span4 social-networks">
+                <h3>Stay in touch</h3>
+                <p>Stay in touch on social networks</p>
+                <a href="https://github.com/vkandy" title="Github" class="icon-github"></a>
+                <a href="https://www.linkedin.com/in/vijaykandy" title="Linked In" class="icon-linkedin"></a>
+            </div>
+            <div class="span4">
+                <h3>Newsletter</h3>
+                <p>Subscribe to our monthly newsletter and be the first to know about our news and special deals!</p>
+                <form>
+                    <input type="text" placeholder="Enter your E-mail" />
+                    <input type="submit" class="btn" value="Ok" />
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="footer-extra">
+        <div class="container">
+            <div class="row">
+                <div class="span4">
+                    &copy; 2013 Kandy Software Inc.
+                </div>
+                <div class="span4">
+                </div>
+                <div class="span4">
+                    <i class="icon-envelope"></i> &nbsp; admin@kandysoftware.com
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script type="text/javascript" src="../../../../js/bootstrap.min.js"></script>
+<script type="text/javascript" src="../../../../js/jquery.isotope.min.js"></script>
+<script type="text/javascript" src="../../../../js/jquery.touchSwipe.js"></script>
+<script type="text/javascript" src="../../../../js/jquery.hotkeys.min.js"></script>
+<script type="text/javascript" src="../../../../js/functions.min.js?v=2"></script>
+<script type="text/javascript" src="../../../../js/shCore.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushPlain.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushJava.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushBash.js"></script>
+<script type="text/javascript">SyntaxHighlighter.all();</script>
+</body>
+
+</html>

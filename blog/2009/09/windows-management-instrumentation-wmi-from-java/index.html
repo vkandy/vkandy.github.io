@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<!--[if lt IE 7 ]><html class="ie ie6" lang="en"> <![endif]-->
+<!--[if IE 7 ]><html class="ie ie7" lang="en"> <![endif]-->
+<!--[if IE 8 ]><html class="ie ie8" lang="en"> <![endif]-->
+<!--[if (gte IE 9)|!(IE)]><!-->
+<html class="not-ie" lang="en">
+<!--<![endif]-->
+
+<head>
+    <meta charset="utf-8">
+    <title>Kandy Software ⊳ Blog</title>
+
+    <meta name="author" content="Vijay Kandy">
+    <meta name="description" content="Software Development and Consultancy">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    <link href="../../../../css/style.min.css" rel="stylesheet">
+    <link href="../../../../css/font-awesome/font-awesome.css" rel="stylesheet">
+    <!--[if IE 7]>
+    <link href="../../../../css/font-awesome/font-awesome-ie7.css" rel="stylesheet">
+    <![endif]-->
+
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800' rel='stylesheet' type='text/css'>
+
+    <!--[if lt IE 9]>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <script>
+        !window.jQuery && document.write(unescape('%3Cscript src="js/jquery-1.8.3.min.js"%3E%3C/script%3E'))
+    </script>
+
+    <link type="text/css" rel="stylesheet" href="../../../../css/shCoreDefault.css"/>
+</head>
+
+<body>
+<header id="header">
+    <div class="navbar">
+        <div class="navbar-inner">
+            <div class="container">
+                <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </a>
+                <a class="brand" href="../../../../../../">
+                    <b>Kandy</b>&nbsp;Software
+                </a>
+                <div class="nav-collapse">
+                    <ul class="nav">
+                        <li><a href="../../../../../../">Home</a></li>
+                        <li><a href="../../../../services">Services</a></li>
+                        <li class="active"><a href="../../../../blog">Blog</a></li>
+                        <li><a href="../../../../about">About us</a></li>
+                        <li><a href="../../../../contact">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div id="content" class="container">
+    <div class="hero-unit">
+        <h1>Windows Management Instrumentation (WMI) from Java</h1>
+        <p>Windows instrumentation using j-interop</p>
+        <small>Vijay Kandy&nbsp;&nbsp;<i class="icon-calendar"></i>&nbsp;September 25, 2009</small>
+    </div>
+
+    <hr />
+
+    <div class="row" id="post">
+        <div class="span12">
+            <article class="post single-post image-post">
+                <p>
+                    <a href="http://msdn.microsoft.com/en-us/library/aa394582(VS.85).aspx" target="_blank">Windows Management Instrumentation (WMI)</a> is used to access management information and instrument resources of a Windows machine. What makes it interesting is that with WMI, you can manage/control components on a Windows machine remotely. Some knowledge of DCOM is helpful as WMI connections are made through DCOM.
+                </p>
+
+                <p>
+                    This post shows how to instrument Windows resources using WMI and Java. Let's say, you'd like to program starting and stopping services (like SQL Server service, Web Server service etc.,) on a remote machine. Here are some tools that can be used for this purpose:
+                </p>
+                <br/>
+                <table border="1" cellpadding="5" cellspacing="0">
+                    <tr>
+                        <td>
+                            <strong>Tool</strong>
+                        </td>
+                        <td>
+                            <strong>Pros</strong>
+                        </td>
+                        <td>
+                            <strong>Cons</strong>
+                        </td>
+                        <td>
+                            <strong>License</strong>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>
+                            <a href="http://j-interop.org/" target="_blank">j-interop</a>
+                        </td>
+                        <td>
+                            <ul>
+                                <li>Open source</li>
+                                <li>It's free (no cost)</li>
+                                <li>100% Java. So it works on any platform.</li>
+                            </ul>
+                        </td>
+                        <td>
+                            <ul>
+                                <li>None. The only thing I would say is that the API is just a bit verbose (compared to say JACOB).</li>
+                            </ul>
+                        </td>
+                        <td>
+                            LGPL
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>
+                            <a href="http://sourceforge.net/projects/jacob-project/" target="_blank">JACOB project</a>
+                        </td>
+                        <td>
+                            <ul>
+                                <li>Open source</li>
+                                <li>It's free (no cost)</li>
+                                <li>Simple API, programs are shorter</li>
+                            </ul>
+                        </td>
+                        <td>
+                            <ul>
+                                <li>It uses JNI and loads DLL(s), so works only on windows machines.</li>
+                            </ul>
+                        </td>
+                        <td>
+                            LGPL
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>
+                            <a href="http://j-integra.intrinsyc.com/products/com/" target="_blank">j-integra</a>
+                        </td>
+                        <td>
+                            <ul>
+                                <li>Available for Windows and other platforms</li>
+                                <li>Nice clean API</li>
+                                <li>Good documentation</li>
+                            </ul>
+                        </td>
+                        <td>
+                            <ul>
+                                <li>You have to generate com2java proxies and mess around with DLLs</li>
+                            </ul>
+                        </td>
+                        <td>
+                            Commercial. May cost anywhere from $400 to $8000
+                        </td>
+                    </tr>
+                </table>
+
+                <p>
+                    My choice is j-interop. The following program in Java uses j-interop library to start/stop services on a remote Windows machine. You can run the program from a Linux machine as j-interop is 100% Java.
+                </p>
+
+                <h2>WMI in action</h2>
+                <p>
+                    This code snippet from <a href="http://msdn.microsoft.com/en-us/library/ms974547.aspx">MSDN</a> written in VBScript using WMI Scripting Library shows how to retrieve services and stop them.
+<pre class="brush: vb; first-line: 1;">
+strComputer = "."
+strNamespace = "\root\cimv2"
+strClass = "Win32_Service"
+
+Const wbemFlagReturnImmediately = &h10
+Const wbemFlagForwardOnly = &h20
+
+Set objSWbemServices = GetObject("winmgmts:\\" & strComputer & strNamespace)
+Set colSWbemObjectSet = objSWbemServices.ExecQuery("SELECT * FROM " & strClass, _
+                        "WQL" _
+                        wbemFlagReturnImmediately + wbemFlagForwardOnly)
+
+For Each objSWbemObject in colSWbemObjectSet
+     objSWbemObject.StopService()
+Next
+</pre>
+                </p>
+
+                <a href="wmi.gif"><img src="wmi.gif" alt="WMI Scripting Library Object Model (Fig 1)" title="WMI Scripting Library Object Model (Fig 1)" width="150" height="150" class="size-thumbnail wp-image-84" style="float: right;"/></a>
+
+                <p>
+                    WMI Scripting Library is single DLL <strong>wbemdisp.dll</strong> that physically resides in the <em>%SystemRoot%\system32\wbem</em> directory. The library provides a unified object model and a simple API to manage and instrument Windows resources. By that I mean, all resources that can be instrumented, can be managed using the same steps.
+                </p>
+
+                <p>
+                    The following figure (Fig 1) shows WMI Scripting Library Object Model. The model also shows the sequence of steps to be performed to get hold of a particular resource. Let's go through the steps one at a time.
+                </p>
+
+                <h2>Step 1</h2>
+                <p>
+                    As you can see from the object model, the first step is to connect to WMI service on the target machine. There are 2 ways to connect to WMI:
+                <ol>
+                    <li>
+                        <h4>Through WMI moniker</h4>
+			<pre class="brush: vb; first-line: 1;">
+			strComputer = "."
+			strNamespace = "\root\cimv2"
+			Set objSWbemServices = GetObject("winmgmts:\\" & strComputer & strNamespace)
+			</pre>
+                    </li>
+                    <li>
+                        <h4>Through <em>SWbemLocator</em> object</h4>
+			<pre class="brush: vb; first-line: 1;">
+			strComputer = "."
+			strNamespace = "\root\cimv2"
+			Set objSWbemLocator = CreateObject("WbemScripting.SWbemLocator")
+			Set objSWbemServices = objLocator.ConnectServer(strComputer, strNamespace)
+			</pre>
+                    </li>
+                </ol>
+                <code>strComputer = "."</code> indicates local machine. To connect to a remote machine, pass the hostname (in addition to username and password).
+
+                In Java, using J-Interop you'd write that as:
+<pre class="brush: java; first-line: 1;">
+import static org.jinterop.dcom.impls.JIObjectFactory.narrowObject;
+import static org.jinterop.dcom.impls.automation.IJIDispatch.IID;
+
+JISession dcomSession = JISession.createSession(domain, user, pass);
+JIComServer comServer = new JIComServer(valueOf("WbemScripting.SWbemLocator"), hostname, dcomSession);
+IJIDispatch wbemLocator = (IJIDispatch) narrowObject(comServer.createInstance().queryInterface(IID));
+
+Object[] params = new Object[] {
+		new JIString(hostname),
+		new JIString("ROOT\\CIMV2"),
+		JIVariant.OPTIONAL_PARAM(),
+		JIVariant.OPTIONAL_PARAM(),
+		JIVariant.OPTIONAL_PARAM(),
+		JIVariant.OPTIONAL_PARAM(),
+		new Integer(0),
+		JIVariant.OPTIONAL_PARAM()
+};
+JIVariant results[] = wbemLocator.callMethodA("ConnectServer", params);
+IJIDispatch wbemServices = (IJIDispatch) narrowObject(results[0].getObjectAsComObject());
+</pre>
+
+                The <strong>SWbemLocator.ConnectServer</strong> method gives us a reference to <strong>SWbemServices</strong> object that represents a connection to a namespace on either a local computer or a remote host computer. You can then use the methods of the <strong>SWbemServices</strong> object to access WMI.
+                </p>
+
+                <h2>Step 2</h2>
+                <p>
+                    Once you obtain a reference to the <strong>SWbemServices</strong> object, you can invoke one of the <a href="http://msdn.microsoft.com/en-us/library/aa393854(VS.85).aspx">methods this class exposes</a> depending on what you want to accomplish. For example, to retrieve Windows services, you can invoke <strong>SWbemServices.InstancesOf</strong> method as show below in VBScript:
+
+<pre class="brush: vb; first-line: 1;">
+Set colSWbemObjectSet = objSWbemServices.InstancesOf("Win32_Service")
+</pre>
+
+                In Java (see <code>ListServices.java</code> in the attached source code):
+<pre class="brush: java; first-line: 1;">
+import static org.jinterop.dcom.impls.JIObjectFactory.narrowObject;
+
+params = new Object[] {
+		new JIString("Win32_Service"),
+		new Integer(0),
+		JIVariant.OPTIONAL_PARAM()
+};
+JIVariant[] servicesSet = wbemServices.callMethodA("InstancesOf", params);
+IJIDispatch wbemObjectSet = (IJIDispatch) narrowObject(servicesSet[0].getObjectAsComObject());
+</pre>
+
+                The method <strong>SWbemServices.InstancesOf</strong> returns all instances of a managed resource. To selectively retrieve a subset of resources, you can use the <strong>SWbemServices.ExecQuery</strong> method which takes a WQL (WMI Query Language) query as shown below.
+
+<pre class="brush: vb; first-line: 1;">
+Const wbemFlagReturnImmediately = &h10
+Const wbemFlagForwardOnly = &h20
+Set colSWbemObjectSet = objSWbemServices.ExecQuery("SELECT * FROM Win32_Service WHERE State = 'Stopped'", _
+                        "WQL" _
+                        wbemFlagReturnImmediately + wbemFlagForwardOnly)
+</pre>
+
+                In Java that would be:
+
+<pre class="brush: java; first-line: 1;">
+import static org.jinterop.dcom.impls.JIObjectFactory.narrowObject;
+
+final int RETURN_IMMEDIATE = 0x10;
+final int FORWARD_ONLY = 0x20;
+params = new Object[] {
+		new JIString("SELECT * FROM Win32_Service WHERE State = 'Stopped'"),
+		JIVariant.OPTIONAL_PARAM(),
+		new JIVariant(new Integer(RETURN_IMMEDIATE + FORWARD_ONLY))
+};
+JIVariant[] servicesSet = wbemServices.callMethodA("ExecQuery", params);
+IJIDispatch wbemObjectSet = (IJIDispatch) narrowObject(servicesSet[0].getObjectAsComObject());
+</pre>
+
+                Note that both methods <strong>SWbemServices.InstancesOf</strong> and <strong>SWbemServices.ExecQuery</strong> always return a collection of zero or more items represented by <strong>SWbemObjectSet</strong> object. The <a href="http://msdn.microsoft.com/en-us/library/aa393980(VS.85).aspx">wbemFlagReturnImmediately</a> causes the call to return immediately whereas <a href="http://msdn.microsoft.com/en-us/library/aa393980(VS.85).aspx">wbemFlagForwardOnly</a> creates a uni-directional iterator.
+                </p>
+
+                <h2>Step 3</h2>
+                <p>
+                    Now the final step. Since our query was to retrieve instances of <strong>Win32_Service</strong>, each object in the collection returned will be an an object of <strong>Win32_Service</strong> class. To manage a given service, you just have to invoke the appropriate methods. For example to stop a service in VBScript:
+
+<pre class="brush: vb; first-line: 1;">
+For Each objSWbemObject in colSWbemObjectSet
+     objSWbemObject.StopService()
+Next
+</pre>
+
+                It takes a few more lines in Java:
+<pre class="brush: java; first-line: 1;">
+import static org.jinterop.dcom.impls.JIObjectFactory.narrowObject;
+
+JIVariant newEnumvariant = wbemObjectSet.get("_NewEnum");
+IJIComObject enumComObject = newEnumvariant.getObjectAsComObject();
+IJIEnumVariant enumVariant = (IJIEnumVariant) narrowObject(enumComObject.queryInterface(IJIEnumVariant.IID));
+
+Object[] elements = enumVariant.next(1);
+JIArray aJIArray = (JIArray) elements[0];
+
+JIVariant[] array = (JIVariant[]) aJIArray.getArrayInstance();
+for (JIVariant variant : array) {
+	IJIDispatch wbemObjectDispatch = (IJIDispatch) narrowObject(variant.getObjectAsComObject());
+
+	JIVariant returnStatus = wbemObjectDispatch.callMethodA("StopService");
+
+	System.out.println(returnStatus.getObjectAsInt());
+}
+</pre>
+
+                The property <a href="http://msdn.microsoft.com/en-us/library/aa265191(VS.60).aspx">_NewEnum</a> is used to enumerate <em>wbemObjectSet</em> collection one object at a time.
+                </p>
+
+                <h2>Putting it all together</h2>
+                <p>
+                    With the 3 steps described above, we can now write a class called <code>SimpleServiceManager</code> that can start and stop a service on a remote machine. Fill in the domain, hostname, username and password and pass service name (not the display name) to start() or stop() a service.
+
+<pre class="brush: java; first-line: 1;">
+import static org.jinterop.dcom.core.JIProgId.valueOf;
+import static org.jinterop.dcom.impls.JIObjectFactory.narrowObject;
+import static org.jinterop.dcom.impls.automation.IJIDispatch.IID;
+
+import java.util.logging.Level;
+
+import org.jinterop.dcom.common.JISystem;
+import org.jinterop.dcom.core.IJIComObject;
+import org.jinterop.dcom.core.JIArray;
+import org.jinterop.dcom.core.JIComServer;
+import org.jinterop.dcom.core.JISession;
+import org.jinterop.dcom.core.JIString;
+import org.jinterop.dcom.core.JIVariant;
+import org.jinterop.dcom.impls.automation.IJIDispatch;
+import org.jinterop.dcom.impls.automation.IJIEnumVariant;
+
+/**
+ * Manages Windows services using WMI API.
+ *
+ * @version $Revision: 1.2 $
+ * @author $Author: vijaykandy $
+ */
+public class SimpleServiceManager {
+
+	private static final int STOP = 0;
+
+	private static final int START = 1;
+
+	/**
+	 * Driver.
+	 *
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		String domain = "";
+		String hostname = "";
+		String username = "";
+		String password = "";
+
+		// We'll start 'Event Log' service.
+		// Note: Display name is "Event Log" where as service name is "Eventlog"
+		SimpleServiceManager manager = new SimpleServiceManager();
+		manager.stop(domain, hostname, username, password, "Eventlog");
+	}
+
+	/**
+	 * Starts a given service if its stopped.
+	 *
+	 * @param domain
+	 * @param hostname
+	 * @param username
+	 * @param password
+	 * @param serviceName
+	 */
+	public void start(String domain, String hostname, String username, String password, String serviceName) {
+		manageService(domain, hostname, username, password, serviceName, START);
+	}
+
+	/**
+	 * Stops a given service if its running.
+	 *
+	 * @param domain
+	 * @param hostname
+	 * @param username
+	 * @param password
+	 * @param serviceName
+	 */
+	public void stop(String domain, String hostname, String username, String password, String serviceName) {
+		manageService(domain, hostname, username, password, serviceName, STOP);
+	}
+
+	/**
+	 * Starts/Stops a given service by connecting to the machine identified by
+	 * hostname.
+	 *
+	 *
+	 * <strong>NOTE:</strong> serviceName is the display name of the service.
+	 *
+	 * @param domain
+	 * @param hostname
+	 * @param username
+	 * @param password
+	 * @param serviceName
+	 * @param action
+	 */
+	public void manageService(String domain, String hostname, String username, String password, String serviceName,
+			int action) {
+
+		if (action != START && action != STOP) {
+			return;
+		}
+
+		JISession dcomSession = null;
+		try {
+			dcomSession = init(domain, username, password);
+			JIComServer comServer = new JIComServer(valueOf("WbemScripting.SWbemLocator"), hostname, dcomSession);
+			IJIDispatch wbemLocator = (IJIDispatch) narrowObject(comServer.createInstance().queryInterface(IID));
+
+			Object[] params = new Object[] {
+					new JIString(hostname),
+					new JIString("ROOT\\CIMV2"),
+					JIVariant.OPTIONAL_PARAM(),
+					JIVariant.OPTIONAL_PARAM(),
+					JIVariant.OPTIONAL_PARAM(),
+					JIVariant.OPTIONAL_PARAM(),
+					new Integer(0),
+					JIVariant.OPTIONAL_PARAM()
+			};
+			JIVariant results[] = wbemLocator.callMethodA("ConnectServer", params);
+
+			IJIDispatch wbemServices = (IJIDispatch) narrowObject(results[0].getObjectAsComObject());
+
+			final int RETURN_IMMEDIATE = 0x10;
+			final int FORWARD_ONLY = 0x20;
+			params = new Object[] {
+					new JIString("SELECT * FROM Win32_Service WHERE Name = '" + serviceName + "'"),
+					JIVariant.OPTIONAL_PARAM(),
+					new JIVariant(new Integer(RETURN_IMMEDIATE + FORWARD_ONLY))
+			};
+			JIVariant[] servicesSet = wbemServices.callMethodA("ExecQuery", params);
+			IJIDispatch wbemObjectSet = (IJIDispatch) narrowObject(servicesSet[0].getObjectAsComObject());
+
+			JIVariant newEnumvariant = wbemObjectSet.get("_NewEnum");
+			IJIComObject enumComObject = newEnumvariant.getObjectAsComObject();
+			IJIEnumVariant enumVariant = (IJIEnumVariant) narrowObject(enumComObject.queryInterface(IJIEnumVariant.IID));
+
+			Object[] elements = enumVariant.next(1);
+			JIArray aJIArray = (JIArray) elements[0];
+
+			JIVariant[] array = (JIVariant[]) aJIArray.getArrayInstance();
+			for (JIVariant variant : array) {
+				IJIDispatch wbemObjectDispatch = (IJIDispatch) narrowObject(variant.getObjectAsComObject());
+
+				// Print object as text. Optional - comment if not needed
+				JIVariant[] v = wbemObjectDispatch.callMethodA("GetObjectText_", new Object[] { 1 });
+				System.out.println(v[0].getObjectAsString().getString());
+
+				// Start or Stop the servie
+				String methodToInvoke = (action == START) ? "StartService" : "StopService";
+				JIVariant returnStatus = wbemObjectDispatch.callMethodA(methodToInvoke);
+
+				// Print out the meaning out return code
+				System.out.println(ErrorCodes.SERVICE_ERRORS.get(returnStatus.getObjectAsInt()));
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			if (dcomSession != null) {
+				try {
+					JISession.destroySession(dcomSession);
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+			}
+		}
+	}
+
+	/**
+	 * Retrieve a session.
+	 *
+	 * @param domain
+	 * @param user
+	 * @param pass
+	 * @return
+	 * @throws Exception
+	 */
+	private static JISession init(String domain, String user, String pass) throws Exception {
+		JISystem.getLogger().setLevel(Level.OFF);
+		JISystem.setAutoRegisteration(true);
+
+		JISession dcomSession = JISession.createSession(domain, user, pass);
+		dcomSession.useSessionSecurity(true);
+		return dcomSession;
+	}
+}
+</pre>
+                </p>
+
+                <h2>Download source</h2>
+                The attached source code has 3 programs:
+                <ol>
+                    <li><code>PrintInstances.java</code> prints all instances of a given class. For e.g., to retrieve a list of services use <code>Win32_Service</code> in WML.
+                    <li><code>SimpleServiceManager.java</code> starts or stops a given service.</li>
+                    <li><code>ServiceManager.java</code> starts or stops a service by starting/stopping any dependents.</li>
+                </ol>
+                <p>
+                    <a href='WMI.zip'>Click to download source code (Eclipse project)</a>
+                </p>
+            </article>
+        </div>
+    </div>
+
+    <div class="clr"></div>
+
+    <hr />
+
+    <div class="row">
+        <div class="span12">
+            <ul class="tags">
+                <li><a href="#">java</a></li>
+                <li><a href="#">wmi</a></li>
+                <li><a href="#">windows</a></li>
+                <li><a href="#">instrumentation</a></li>
+                <li><a href="#">j-interop</a></li>
+            </ul>
+
+            <section id="comments">
+            </section>
+        </div>
+    </div>
+</div>
+
+<p/>
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="span4">
+                <h3>Kandy Software Inc.</h3>
+                <ul>
+                    <li><a href="../../../../" title="">Home</a></li>
+                    <li><a href="../../../../services" title="">Services</a></li>
+                    <li><a href="../../../../about" title="">About us</a></li>
+                    <li><a href="../../../../contact" title="">Contact</a></li>
+                </ul>
+            </div>
+            <div class="span4 social-networks">
+                <h3>Stay in touch</h3>
+                <p>Stay in touch on social networks</p>
+                <a href="https://github.com/vkandy" title="Github" class="icon-github"></a>
+                <a href="https://www.linkedin.com/in/vijaykandy" title="Linked In" class="icon-linkedin"></a>
+            </div>
+            <div class="span4">
+                <h3>Newsletter</h3>
+                <p>Subscribe to our monthly newsletter and be the first to know about our news and special deals!</p>
+                <form>
+                    <input type="text" placeholder="Enter your E-mail" />
+                    <input type="submit" class="btn" value="Ok" />
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="footer-extra">
+        <div class="container">
+            <div class="row">
+                <div class="span4">
+                    &copy; 2013 Kandy Software Inc.
+                </div>
+                <div class="span4">
+                </div>
+                <div class="span4">
+                    <i class="icon-envelope"></i> &nbsp; admin@kandysoftware.com
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script type="text/javascript" src="../../../../js/bootstrap.min.js"></script>
+<script type="text/javascript" src="../../../../js/jquery.isotope.min.js"></script>
+<script type="text/javascript" src="../../../../js/jquery.touchSwipe.js"></script>
+<script type="text/javascript" src="../../../../js/jquery.hotkeys.min.js"></script>
+<script type="text/javascript" src="../../../../js/functions.min.js?v=2"></script>
+<script type="text/javascript" src="../../../../js/shCore.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushPlain.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushJava.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushBash.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushVb.js"></script>
+<script type="text/javascript">SyntaxHighlighter.all();</script>
+</body>
+
+</html>

@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<!--[if lt IE 7 ]><html class="ie ie6" lang="en"> <![endif]-->
+<!--[if IE 7 ]><html class="ie ie7" lang="en"> <![endif]-->
+<!--[if IE 8 ]><html class="ie ie8" lang="en"> <![endif]-->
+<!--[if (gte IE 9)|!(IE)]><!-->
+<html class="not-ie" lang="en">
+<!--<![endif]-->
+
+<head>
+    <meta charset="utf-8">
+    <title>Kandy Software ⊳ Blog</title>
+
+    <meta name="author" content="Vijay Kandy">
+    <meta name="description" content="Software Development and Consultancy">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    <link href="../../../../css/style.min.css" rel="stylesheet">
+    <link href="../../../../css/font-awesome/font-awesome.css" rel="stylesheet">
+    <!--[if IE 7]>
+    <link href="../../../../css/font-awesome/font-awesome-ie7.css" rel="stylesheet">
+    <![endif]-->
+
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800' rel='stylesheet' type='text/css'>
+
+    <!--[if lt IE 9]>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <script>
+        !window.jQuery && document.write(unescape('%3Cscript src="js/jquery-1.8.3.min.js"%3E%3C/script%3E'))
+    </script>
+
+    <link type="text/css" rel="stylesheet" href="../../../../css/shCoreDefault.css"/>
+</head>
+
+<body>
+<header id="header">
+    <div class="navbar">
+        <div class="navbar-inner">
+            <div class="container">
+                <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </a>
+                <a class="brand" href="../../../../../../">
+                    <b>Kandy</b>&nbsp;Software
+                </a>
+                <div class="nav-collapse">
+                    <ul class="nav">
+                        <li><a href="../../../../../../">Home</a></li>
+                        <li><a href="../../../../services">Services</a></li>
+                        <li class="active"><a href="../../../../blog">Blog</a></li>
+                        <li><a href="../../../../about">About us</a></li>
+                        <li><a href="../../../../contact">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div id="content" class="container">
+    <div class="hero-unit">
+        <h1>Java solution for excercise 8.11 in Programming Erlang</h1>
+        <p>Ring benchmark in Java</p>
+        <small>Vijay Kandy&nbsp;&nbsp;<i class="icon-calendar"></i>&nbsp;February 28, 2009</small>
+    </div>
+
+    <hr />
+
+    <div class="row" id="post">
+        <div class="span12">
+            <article class="post single-post image-post">
+                <p>
+                    <b>Problem:</b> Write a ring benchmark. Create N processes in a ring. Send a message round the ring M times so that a total of N * M messages get sent. Time how long this takes for different values of N and M. Write a similar program in some other programming language you are familiar with. compare the results. Write a blog, and publish the results on the Internet!
+                </p>
+
+                You can find quite a few Java solutions on the Internet for this exercise, which is at the end of chapter 8 in <a href="http://www.pragprog.com/titles/jaerlang/programming-erlang">Programming Erlang</a> by Joe Armstrong. I wanted to post a solution for these reasons:
+
+                <ol>
+                    <li>Some Java solutions I saw on the web, do not pass messages in a ring. I think of ring as a circular linked list. The last member in the list has to pass the message to the first member (the one that started message passing). Otherwise, it isn't a ring - its just an open ended chain.</li>
+                    <li>Code written using <code>wait()</code>/<code>notify()</code> makes me dizzy and when you have Java 6, you have to take advantage of <code>java.util.concurrent</code> library.</li>
+                    <li>The Java program here - <a href="http://www.sics.se/~joe/ericsson/du98024.html">http://www.sics.se/~joe/ericsson/du98024.html</a> - written in 1998 on JDK 1.1.6 needs a makeover.</li>
+                    <li>Lastly, the problem itself states that you should write the ring benchmark in another language and post the results.</li>
+                </ol>
+
+                So, here's my solution. The driver class:
+
+<pre class="brush: java; first-line: 1;">
+/**
+ * @(#) Ring.java Feb 28, 2009 4:30:40 PM
+ */
+package ring;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.Scanner;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+/**
+ * This is a driver class that starts a variable size ring.
+ *
+ * @author $Author: vijaykandy $
+ * @version $Revision: 1.0 $
+ */
+public class Ring {
+	public static void main(String args[]) throws InterruptedException {
+		Scanner scanner = new Scanner(System.in);
+		System.out.println("Enter N:");
+		int N = scanner.nextInt();
+		System.out.println("Enter M:");
+		int M = scanner.nextInt();
+
+		long beginInit = System.currentTimeMillis();
+		CountDownLatch passComplete = new CountDownLatch(N);
+		LinkedList&lt;RingMember&lt;Integer&gt;&gt; ring = initRing(N, M, passComplete);
+		long endInit = System.currentTimeMillis();
+
+		Integer messages[] = createMessages(M);
+
+		long beginPassing = System.currentTimeMillis();
+		ring.getFirst().startPassing(Arrays.asList(messages));
+		passComplete.await();
+		long endPassing = System.currentTimeMillis();
+
+		System.err.format("Initing ring of %d threads took: %d millis%n", N, (endInit - beginInit));
+		System.err.format("Passing a message %d times took: %d millis%n", M, (endPassing - beginPassing));
+	}
+
+	private static LinkedList&lt;RingMember&lt;Integer&gt;&gt; initRing(int N, int M, CountDownLatch doneSignal) {
+		LinkedList&lt;RingMember&lt;Integer&gt;&gt; ring = new LinkedList&lt;RingMember&lt;Integer&gt;&gt;();
+
+		// Create the first member with name = 1 and neighbor as null
+		RingMember&lt;Integer&gt; starter = new RingMember&lt;Integer&gt;(1, M, doneSignal);
+		starter.setNeighbor(null);
+		ring.add(starter);
+
+		// Initialize the rest of the ring
+		for (int name = 2; name &lt;= N; name++) {
+			RingMember&lt;Integer&gt; member = new RingMember&lt;Integer&gt;(name, M, doneSignal);
+			member.setNeighbor(ring.getLast());
+			ring.add(member);
+		}
+		ring.getFirst().setNeighbor(ring.getLast());
+
+		// Start threads
+		ExecutorService pool = Executors.newFixedThreadPool(N);
+		for (RingMember&lt;Integer&gt; member : ring) {
+			pool.execute(member);
+		}
+		pool.shutdown();
+
+		return ring;
+	}
+
+	private static Integer[] createMessages(int size) {
+		Integer[] messages = new Integer[size];
+		for (int i = 0; i &lt; size; i++) {
+			messages[i] = i;
+		}
+		return messages;
+	}
+}
+</pre>
+
+                The <code>RingMember</code> class:
+
+<pre class="brush: java; first-line: 1;">
+/**
+ * @(#) RingMember.java Feb 28, 2009 4:30:40 PM
+ */
+package ring;
+
+import java.util.Collection;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CountDownLatch;
+
+/**
+ * Represents a ring member.
+ *
+ * Each member is "smart" enough to know when to pass a message to its neighbor.
+ * The member that starts passing messages is a &lt;i&gt;starter&lt;/i&gt; and has
+ * &lt;code&gt;isStarter&lt;/code&gt; set to &lt;code&gt;true&lt;/code&gt;.
+ *
+ * This is a generic class and hence any type of message can be passed around
+ * the ring.
+ *
+ * Each member &lt;b&gt;is an&lt;/b&gt; &lt;code&gt;ArrayBlockingQueue&lt;/code&gt; of size 1. Hence
+ * 1 message is passed at a time.
+ *
+ * @author $Author: vijaykandy $
+ * @version $Revision: 1.0 $
+ */
+class RingMember&lt;T&gt; extends ArrayBlockingQueue&lt;T&gt; implements Runnable {
+	private static final long serialVersionUID = 8627995769853843195L;
+	private int M;
+	private int name;
+	private boolean isStarter;
+	private RingMember&lt;T&gt; neighbor;
+	private CountDownLatch doneSignal;
+
+	public RingMember(int name, int M, CountDownLatch doneSignal) {
+		super(1);
+		this.M = M;
+		this.name = name;
+		this.doneSignal = doneSignal;
+	}
+
+	@Override
+	public void run() {
+		try {
+			while (M-- &gt; 0) {
+				T message = neighbor.take();
+				System.out.format("Thread#%s took %s from Thread#%s%n", name, message, neighbor.name);
+				if (!isStarter) {
+					put(message);
+				}
+			}
+			doneSignal.countDown();
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
+	}
+
+	public void setNeighbor(RingMember&lt;T&gt; n) {
+		this.neighbor = n;
+	}
+
+	public void startPassing(Collection&lt;T&gt; messages) {
+		isStarter = true;
+		for (T message : messages) {
+			try {
+				put(message);
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+		}
+	}
+}
+</pre>
+
+                <p>
+                    <b>Usage:</b>
+<pre>
+Enter N:
+10
+Enter M:
+5
+Initing ring of 10 threads took: 187 millis
+Passing a message 5 times took: 78 millis
+</pre>
+                </p>
+
+                You can shorten the program by a few lines but I like this version as it is more readable. In my next entry, I'll post a solution in Erlang and compare message passing times in Java and in Erlang for different values of N and M.
+            </article>
+        </div>
+    </div>
+
+    <div class="clr"></div>
+
+    <hr />
+
+    <div class="row">
+        <div class="span12">
+            <ul class="tags">
+                <li><a href="#">erlang</a></li>
+                <li><a href="#">java</a></li>
+                <li><a href="#">ring benchmark</a></li>
+                <li><a href="#">message</a></li>
+                <li><a href="#">passing</a></li>
+            </ul>
+
+            <section id="comments">
+            </section>
+        </div>
+    </div>
+</div>
+
+<p/>
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="span4">
+                <h3>Kandy Software Inc.</h3>
+                <ul>
+                    <li><a href="../../../../" title="">Home</a></li>
+                    <li><a href="../../../../services" title="">Services</a></li>
+                    <li><a href="../../../../about" title="">About us</a></li>
+                    <li><a href="../../../../contact" title="">Contact</a></li>
+                </ul>
+            </div>
+            <div class="span4 social-networks">
+                <h3>Stay in touch</h3>
+                <p>Stay in touch on social networks</p>
+                <a href="https://github.com/vkandy" title="Github" class="icon-github"></a>
+                <a href="https://www.linkedin.com/in/vijaykandy" title="Linked In" class="icon-linkedin"></a>
+            </div>
+            <div class="span4">
+                <h3>Newsletter</h3>
+                <p>Subscribe to our monthly newsletter and be the first to know about our news and special deals!</p>
+                <form>
+                    <input type="text" placeholder="Enter your E-mail" />
+                    <input type="submit" class="btn" value="Ok" />
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="footer-extra">
+        <div class="container">
+            <div class="row">
+                <div class="span4">
+                    &copy; 2013 Kandy Software Inc.
+                </div>
+                <div class="span4">
+                </div>
+                <div class="span4">
+                    <i class="icon-envelope"></i> &nbsp; admin@kandysoftware.com
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script type="text/javascript" src="../../../../js/bootstrap.min.js"></script>
+<script type="text/javascript" src="../../../../js/jquery.isotope.min.js"></script>
+<script type="text/javascript" src="../../../../js/jquery.touchSwipe.js"></script>
+<script type="text/javascript" src="../../../../js/jquery.hotkeys.min.js"></script>
+<script type="text/javascript" src="../../../../js/functions.min.js?v=2"></script>
+<script type="text/javascript" src="../../../../js/shCore.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushPlain.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushJava.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushBash.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushErlang.js"></script>
+<script type="text/javascript">SyntaxHighlighter.all();</script>
+</body>
+
+</html>

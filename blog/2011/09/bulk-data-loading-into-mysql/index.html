@@ -64,7 +64,8 @@
 <div id="content" class="container">
     <div class="hero-unit">
         <h1>Bulk data loading into MySQL from Grails</h1>
-        <p>Load lots of data into MySQL tables efficiently</p>
+        <p>Load data into MySQL tables efficiently</p>
+        <small>Vijay Kandy&nbsp;&nbsp;<i class="icon-calendar"></i>&nbsp;September 23, 2011</small>
     </div>
 
     <hr />
@@ -72,11 +73,6 @@
     <div class="row" id="post">
         <div class="span12">
             <article class="post single-post image-post">
-                <div class="entry-meta">
-                    <span class="entry-type"></span>
-                    <span class="entry-date">September 23rd, 2011</span>
-                </div>
-
                 <div class="entry-content">
                     <p>
                         This post is about inserting large amounts of data into MySQL as fast as possible. MySQL provides a few ways to <a href="http://dev.mysql.com/doc/refman/5.1/en/insert-speed.html" target="_blank">improve the speed of INSERT statements</a>. However, if you are comfortable with straying from JDBC standard, <a href="http://dev.mysql.com/doc/refman/5.1/en/load-data.html" target="_blank"><code>LOAD DATA INFILE</code></a> statement is probably the fastest way to insert data into MySQL.
@@ -197,16 +193,27 @@ LOAD DATA INFILE 'data.txt' INTO TABLE tbl_name
                     <p>
                         For information on improving batch import performance, read <a href="http://naleid.com/blog/2009/10/01/batch-import-performance-with-grails-and-mysql/" target="_blank">Ted Naleid's post</a> on that topic.
                     </p>
-    
-                    <p><a href="#" title=""><i>Vijay Kandy</i></a></p>
                 </div>
-
-                <div class="clr"></div>
-
-                <section id="comments">
-
-                </section>
             </article>
+        </div>
+    </div>
+
+    <div class="clr"></div>
+
+    <hr />
+
+    <div class="row">
+        <div class="span12">
+            <ul class="tags">
+                <li><a href="#">Grails</a></li>
+                <li><a href="#">MySQL</a></li>
+                <li><a href="#">bulk</a></li>
+                <li><a href="#">load</a></li>
+                <li><a href="#">INFILE</a></li>
+            </ul>
+
+            <section id="comments">
+            </section>
         </div>
     </div>
 </div>
@@ -219,14 +226,10 @@ LOAD DATA INFILE 'data.txt' INTO TABLE tbl_name
             <div class="span4">
                 <h3>Kandy Software Inc.</h3>
                 <ul>
-                    <li><a href="/index.html" title="">Home</a>
-                    </li>
-                    <li><a href="/services.html" title="">Services</a>
-                    </li>
-                    <li><a href="/about.html" title="">About us</a>
-                    </li>
-                    <li><a href="/contact.html" title="">Contact</a>
-                    </li>
+                    <li><a href="../../../../" title="">Home</a></li>
+                    <li><a href="../../../../services" title="">Services</a></li>
+                    <li><a href="../../../../about" title="">About us</a></li>
+                    <li><a href="../../../../contact" title="">Contact</a></li>
                 </ul>
             </div>
             <div class="span4 social-networks">

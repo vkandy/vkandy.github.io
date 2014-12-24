@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<!--[if lt IE 7 ]><html class="ie ie6" lang="en"> <![endif]-->
+<!--[if IE 7 ]><html class="ie ie7" lang="en"> <![endif]-->
+<!--[if IE 8 ]><html class="ie ie8" lang="en"> <![endif]-->
+<!--[if (gte IE 9)|!(IE)]><!-->
+<html class="not-ie" lang="en">
+<!--<![endif]-->
+
+<head>
+    <meta charset="utf-8">
+    <title>Kandy Software ⊳ Blog</title>
+
+    <meta name="author" content="Vijay Kandy">
+    <meta name="description" content="Software Development and Consultancy">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    <link href="../../../../css/style.min.css" rel="stylesheet">
+    <link href="../../../../css/font-awesome/font-awesome.css" rel="stylesheet">
+    <!--[if IE 7]>
+    <link href="../../../../css/font-awesome/font-awesome-ie7.css" rel="stylesheet">
+    <![endif]-->
+
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800' rel='stylesheet' type='text/css'>
+
+    <!--[if lt IE 9]>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <script>
+        !window.jQuery && document.write(unescape('%3Cscript src="js/jquery-1.8.3.min.js"%3E%3C/script%3E'))
+    </script>
+
+    <link type="text/css" rel="stylesheet" href="../../../../css/shCoreDefault.css"/>
+</head>
+
+<body>
+<header id="header">
+    <div class="navbar">
+        <div class="navbar-inner">
+            <div class="container">
+                <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </a>
+                <a class="brand" href="../../../../../../">
+                    <b>Kandy</b>&nbsp;Software
+                </a>
+                <div class="nav-collapse">
+                    <ul class="nav">
+                        <li><a href="../../../../../../">Home</a></li>
+                        <li><a href="../../../../services">Services</a></li>
+                        <li class="active"><a href="../../../../blog">Blog</a></li>
+                        <li><a href="../../../../about">About us</a></li>
+                        <li><a href="../../../../contact">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div id="content" class="container">
+    <div class="hero-unit">
+        <h1>Erlang vs. Java message passing times</h1>
+        <p>Comparing ring benchmark in Erlang and Java</p>
+        <small>Vijay Kandy&nbsp;&nbsp;<i class="icon-calendar"></i>&nbsp;March 31, 2009</small>
+    </div>
+
+    <hr />
+
+    <div class="row" id="post">
+        <div class="span12">
+            <article class="post single-post image-post">
+                I benchmarked ring programs in Erlang and Java for various values of N (number of threads) and M (number of messages). You can see my <a href="../../../../blog/2009/03/erlang-solution-for-excercise-811-in-programming-erlang/">Erlang solution here</a> and <a href="../../../../blog/2009/02/java-solution-for-excercise-811-in-programming-erlang/">Java solution here</a>. For N, I ran 10, 50, 100, 500, 1000, 5000 and 10000 threads. The values I used for M are 10, 100, 1K, 10K, 100K, 1 Million.
+
+                The results are available in Google Spreadsheet (no login necessary):
+                <a href="http://spreadsheets.google.com/ccc?key=p6lbXDA9b-EEO5KGTm2r-Ag" target="_blank">http://spreadsheets.google.com/ccc?key=p6lbXDA9b-EEO5KGTm2r-Ag</a>
+
+                The report can also be viewed in HTML format:
+                <a href="http://spreadsheets.google.com/pub?key=p6lbXDA9b-EEO5KGTm2r-Ag&output=html" target="_blank">http://spreadsheets.google.com/pub?key=p6lbXDA9b-EEO5KGTm2r-Ag&output=html</a>
+
+                Note that the times published are wall clock times. Here is my hardware info and the commands I ran:
+                <br/>
+                <table>
+                    <tr>
+                        <td><b>Environment</b></td>
+                        <td>Pentium(R) D 3.00GHz, 1GB RAM, Dual Core, Windows XP</td>
+                    </tr>
+                    <tr>
+                        <td><b>Java params</b></td>
+                        <td>java -server -Xss1K</td>
+                    </tr>
+                    <tr>
+                        <td><b>Erlang params</b></td>
+                        <td>erl (didn't need -p)</td>
+                    </tr>
+                </table>
+
+                The following 2 graphs show times (in millis) when 10, 100, 1K, 10K, 100K, 1 Million messages were passed around in a ring of 5,000 threads.
+
+                <img src="ring_benchmark1.png" alt="ring_benchmark1" title="ring_benchmark1" width="406" height="320" class="size-full wp-image-63" />
+
+                <img src="ring_benchmark2.png" alt="ring_benchmark2" title="ring_benchmark2" width="478" height="320" class="size-full wp-image-64" />
+
+                <b>Lessons learned:</b>
+
+                I know this is a micro benchmark but still it was a good test to compare message passing in Erlang and in Java.
+
+                Apart from the usual - Java slow, Erlang fast - stuff, which we all know by now, I wanted to say I was pleasantly surprised that writing the solution in Erlang was a lot easier than writing in Java. Not having to worry about threads sharing objects made it easier to think and write code. I really appreciated <a href="http://en.wikipedia.org/wiki/Tail_recursion" target="_blank">tail recursion</a> is Erlang. As you can see, it takes fewer lines to solve the problem in Erlang. I've come to like the <a href="http://en.wikipedia.org/wiki/Actor_model">Actor model</a> more.
+
+                I should also say that the Java solution would have been messier if not for <code>java.util.concurrent</code> classes. Without <code>java.util.concurrent</code> classes it would have been difficult to test and verify that the solution actually worked.
+
+                I could not run more than 5,000 threads in Java so I used -Xss1K option and was able to run 10,000 threads. In erlang however, I could create 30,000 processes. The size of a process in Erlang is just a few bytes.
+
+                Lastly, I should mention that while running 10,000 threads in Java the process size of JVM was close to 200MB. The process size of Erlang VM while running 10,000 processes was just about 30MB.
+            </article>
+        </div>
+    </div>
+
+    <div class="clr"></div>
+
+    <hr />
+
+    <div class="row">
+        <div class="span12">
+            <ul class="tags">
+                <li><a href="#">erlang</a></li>
+                <li><a href="#">java</a></li>
+                <li><a href="#">ring benchmark</a></li>
+                <li><a href="#">message</a></li>
+                <li><a href="#">passing</a></li>
+            </ul>
+
+            <section id="comments">
+            </section>
+        </div>
+    </div>
+</div>
+
+<p/>
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="span4">
+                <h3>Kandy Software Inc.</h3>
+                <ul>
+                    <li><a href="../../../../" title="">Home</a></li>
+                    <li><a href="../../../../services" title="">Services</a></li>
+                    <li><a href="../../../../about" title="">About us</a></li>
+                    <li><a href="../../../../contact" title="">Contact</a></li>
+                </ul>
+            </div>
+            <div class="span4 social-networks">
+                <h3>Stay in touch</h3>
+                <p>Stay in touch on social networks</p>
+                <a href="https://github.com/vkandy" title="Github" class="icon-github"></a>
+                <a href="https://www.linkedin.com/in/vijaykandy" title="Linked In" class="icon-linkedin"></a>
+            </div>
+            <div class="span4">
+                <h3>Newsletter</h3>
+                <p>Subscribe to our monthly newsletter and be the first to know about our news and special deals!</p>
+                <form>
+                    <input type="text" placeholder="Enter your E-mail" />
+                    <input type="submit" class="btn" value="Ok" />
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="footer-extra">
+        <div class="container">
+            <div class="row">
+                <div class="span4">
+                    &copy; 2013 Kandy Software Inc.
+                </div>
+                <div class="span4">
+                </div>
+                <div class="span4">
+                    <i class="icon-envelope"></i> &nbsp; admin@kandysoftware.com
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script type="text/javascript" src="../../../../js/bootstrap.min.js"></script>
+<script type="text/javascript" src="../../../../js/jquery.isotope.min.js"></script>
+<script type="text/javascript" src="../../../../js/jquery.touchSwipe.js"></script>
+<script type="text/javascript" src="../../../../js/jquery.hotkeys.min.js"></script>
+<script type="text/javascript" src="../../../../js/functions.min.js?v=2"></script>
+<script type="text/javascript" src="../../../../js/shCore.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushPlain.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushJava.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushBash.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushVb.js"></script>
+<script type="text/javascript">SyntaxHighlighter.all();</script>
+</body>
+
+</html>

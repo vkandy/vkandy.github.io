@@ -1,0 +1,343 @@
+CompilerOracle: print *FavoriteChars.myFavorites
+VM option '+EliminateLocks'
+VM option 'CompileCommand=print,*FavoriteChars.myFavorites'
+Could not load hsdis-i386.so; library not loadable; PrintAssembly is disabled
+PrintAssembly request changed to PrintOptoAssembly
+{method} 
+ - klass: {other class}
+ - method holder:     'FavoriteChars'
+ - constants:         0xb710a464{constant pool}
+ - access:            0x81000001  public 
+ - name:              'myFavorites'
+ - signature:         '()[C'
+ - max stack:         4
+ - max locals:        4
+ - size of params:    1
+ - method size:       20
+ - vtable index:      5
+ - i2i entry:         0xb3461820
+ - adapter:           0x08c019a8
+ - compiled entry     0xb3500b28
+ - code size:         34
+ - code start:        0xaf567d58
+ - code end (excl):   0xaf567d7a
+ - method data:       0xaf56a758
+ - checked ex length: 0
+ - linenumber start:  0xaf567d7a
+ - localvar length:   0
+#
+#  char[int:>=0]:exact * ( FavoriteChars:NotNull * )
+#
+#r000 ecx   : parm 0: FavoriteChars:NotNull *
+# -- Old esp -- Framesize: 32 --
+#r045 esp+28: return address
+#r044 esp+24: pad2, in_preserve
+#r043 esp+20: Fixed slot 1
+#r042 esp+16: Fixed slot 0
+#r049 esp+12: spill
+#r048 esp+ 8: spill
+#r047 esp+ 4: outgoing argument
+#r046 esp+ 0: outgoing argument
+#
+000   N264: #	B1 <- BLOCK HEAD IS JUNK   Freq: 1
+000   	CMP    EAX,[ECX+4]	# Inline cache check
+	JNE    SharedRuntime::handle_ic_miss_stub
+	NOP
+	NOP
+	NOP
+
+000
+00c   B1: #	B12 B2 <- BLOCK HEAD IS JUNK   Freq: 1
+00c   	# stack bang
+	PUSHL  EBP
+	SUB    ESP,24	# Create frame
+01a   	MOV    EBX,ECX
+01c   	MOV    EAX,[ECX]	# int
+01e   	MOV    ECX,EAX
+020   	AND    ECX,#7
+023   	MOV    EDX, Thread::current()
+02f   	CMP    ECX,#5
+032   	Jne    B12  P=0.000001 C=-1.000000
+032
+038   B2: #	B15 B3 <- B1  Freq: 0.999999
+038   	MOV    ECX,precise klass FavoriteChars: 0x08e05b88:Constant:exact *
+03d   	MOV    EBP,[ECX + #104]	# int
+040   	MOV    ECX,EBP
+042   	OR     ECX,EDX
+044   	MOV    EDI,ECX
+046   	XOR    EDI,EAX
+048   	TEST   EDI,#-121
+04e   	Jne    B15  P=0.000001 C=-1.000000
+04e
+054   B3: #	B22 B4 <- B13 B12 B2 B19  Freq: 1
+054   	MEMBAR-acquire (prior CMPXCHG in FastLock so empty encoding)
+054   	MOV    EAX,[EBX + #8] ! Field FavoriteChars.VOWELS
+057   	MOV    EBP,[EAX + #8]
+05a   	NullCheck EAX
+05a
+05a   B4: #	B14 B5 <- B3  Freq: 0.999999
+05a   	CMPu   EBP,#2
+05d   	Jbe,u  B14  P=0.000001 C=-1.000000
+05d
+063   B5: #	B20 B6 <- B4  Freq: 0.999998
+063   	MOVZX  EDI,[EAX + #16]	# ushort/char -> int
+067   	MOVZX  ESI,[EAX + #14]	# ushort/char -> int
+06b   	MOVZX  EBP,[EAX + #12]	# ushort/char -> int
+06f   	MEMBAR-release ! (empty encoding)
+06f   	MOV    EAX,#7
+074   	AND    EAX,[EBX]
+076   	CMP    EAX,#5
+079   	Jne    B20  P=0.000001 C=-1.000000
+079
+07f   B6: #	B9 B7 <- B21 B20 B5  Freq: 0.999998
+07f   	MOV    EAX,[EDX + #68]
+082   	LEA    ECX,[EAX + #24]
+085   	CMPu   ECX,[EDX + #76]
+088   	Jnb,us B9  P=0.000100 C=-1.000000
+088
+08a   B7: #	B8 <- B6  Freq: 0.999898
+08a   	MOV    [EDX + #68],ECX
+08d   	PREFETCHNTA [ECX + #256]	! Prefetch into non-temporal cache for write
+094   	MOV    [EAX],0x00000001
+09a   	PREFETCHNTA [ECX + #288]	! Prefetch into non-temporal cache for write
+0a1   	MOV    [EAX + #4],precise klass [C: 0x08bdea30:Constant:exact *
+0a8   	PREFETCHNTA [ECX + #320]	! Prefetch into non-temporal cache for write
+0af   	MOV    [EAX + #8],#3
+0b6   	MOV    [EAX + #12],#0
+0bd   	XOR    ECX.lo,ECX.lo
+	XOR    ECX.hi,ECX.hi
+0c1   	MOV    [EAX + #16],ECX.lo
+	MOV    [EAX + #16]+4,ECX.hi
+0c1
+0c7   B8: #	N264 <- B10 B7  Freq: 0.999998
+0c7   	MOV16  [EAX + #12],EBP
+0cb   	
+0cb   	#checkcastPP of EAX
+0cb   	MOV16  [EAX + #14],ESI
+0cf   	MOV16  [EAX + #16],EDI
+0d3   	ADD    ESP,24	# Destroy frame
+	POPL   EBP
+	TEST   PollPage,EAX	! Poll Safepoint
+	
+0dd   	RET
+0dd
+0de   B9: #	B23 B10 <- B6  Freq: 0.000100016
+0de   	MOV    [ESP + #12],ESI
+0e2   	MOV    [ESP + #8],EDI
+0e6   	MOV    ECX,precise klass [C: 0x08bdea30:Constant:exact *
+0eb   	MOV    EDX,#3
+0f0   	NOP 	# 3 bytes pad for loops and calls
+0f3   	CALL,static  wrapper for: _new_array_Java
+        # FavoriteChars::myFavorites @ bci:19  L[0]=_ L[1]=EBP L[2]=esp + #12 L[3]=esp + #8
+        # OopMap{off=248}
+0f8
+0f8   B10: #	B8 <- B9  Freq: 0.000100014
+        # Block is sole successor of call
+0f8   	MOV    EDI,[ESP + #8]
+0fc   	MOV    ESI,[ESP + #12]
+100   	JMP,s  B8
+100
+102   B11: #	B12 <- B15  Freq: 9.99999e-13
+102   	CMPXCHG [EBX],EBP	# If EAX==[EBX] Then store EBP into [EBX]
+105
+105   B12: #	B3 B13 <- B1 B11  Freq: 1e-06
+105   	LEA    EBP,[ESP + #16]
+109   	FASTLOCK EBX, EBP KILLS EAX,ECX
+153   	Je    B3  P=0.999999 C=-1.000000
+153
+159   B13: #	B3 <- B18 B12  Freq: 2e-12
+159   	MOV    [ESP + #8],EDX
+15d   	MOV    EBP,EBX
+15f   	MOV    ECX,EBX
+161   	LEA    EDX,[ESP + #16]
+165   	NOP 	# 2 bytes pad for loops and calls
+167   	CALL,static  wrapper for: _complete_monitor_locking_Java
+        # FavoriteChars::getVowel @ bci:-1  L[0]=EBP L[1]=#0 MON-BOX0=esp+16 MON-OBJ[0]=EBP
+        # FavoriteChars::myFavorites @ bci:2  L[0]=EBP L[1]=_ L[2]=_ L[3]=_
+        # OopMap{ebp=Oop off=364}
+16c   	MOV    EBX,EBP
+16e   	MOV    EDX,[ESP + #8]
+172   	JMP    B3
+172
+177   B14: #	N264 <- B4  Freq: 9.99999e-07
+177   	MOV    ECX,#-28
+17c   	MOV    [ESP + #8],EAX
+180   	MOV    [ESP + #12],EBX
+184   	NOP 	# 3 bytes pad for loops and calls
+187   	CALL,static  wrapper for: uncommon_trap(reason='range_check' action='make_not_entrant')
+        # FavoriteChars::getVowel @ bci:5  L[0]=_ L[1]=_ STK[0]=esp + #8 STK[1]=#0 MON-BOX0=esp+16 MON-OBJ[0]=esp + #12
+        # FavoriteChars::myFavorites @ bci:2  L[0]=esp + #12 L[1]=_ L[2]=_ L[3]=_
+        # OopMap{[8]=Oop [12]=Oop off=396}
+18c   	INT3   ; ShouldNotReachHere
+18c
+191   B15: #	B11 B16 <- B2  Freq: 9.99999e-07
+191   	TEST   EDI,#7
+197   	Jne    B11  P=0.000001 C=-1.000000
+197
+19d   B16: #	B18 B17 <- B15  Freq: 9.99998e-07
+19d   	TEST   EDI,#384
+1a3   	Jne,s  B18  P=0.000001 C=-1.000000
+1a3
+1a5   B17: #	B18 <- B16  Freq: 9.99997e-07
+1a5   	AND    EAX,#511
+1ab   	MOV    ECX,EAX
+1ad   	OR     ECX,EDX
+1af
+1af   B18: #	B13 B19 <- B17 B16  Freq: 9.99998e-07
+1af   	CMPXCHG [EBX],ECX	# If EAX==[EBX] Then store ECX into [EBX]
+1b2   	Jne,s  B13  P=0.000001 C=-1.000000
+1b2
+1b4   B19: #	B3 <- B18  Freq: 9.99997e-07
+1b4   	JMP    B3
+1b4
+1b9   B20: #	B6 B21 <- B5  Freq: 9.99998e-07
+1b9   	LEA    EAX,[ESP + #16]
+1bd   	FASTUNLOCK EBX, EAX, ECX
+1f9   	Je    B6  P=0.999999 C=-1.000000
+1f9
+1ff   B21: #	B6 <- B20  Freq: 9.99998e-13
+1ff   	MOV    [ESP + #8],ESI
+203   	MOV    ESI,EDX
+205   	MOV    [ESP + #0],EBX
+208   	LEA    EBX,[ESP + #16]
+20c   	MOV    [ESP + #4],EBX
+210   	CALL_LEAF,runtime  complete_monitor_unlocking_C
+        No JVM State Info
+        # 
+215   	MOV    EDX,ESI
+217   	MOV    ESI,[ESP + #8]
+21b   	JMP    B6
+21b
+220   B22: #	N264 <- B3  Freq: 1.01328e-06
+220   	MOV    ECX,#-10
+225   	MOV    EBP,EBX
+227   	CALL,static  wrapper for: uncommon_trap(reason='null_check' action='maybe_recompile')
+        # FavoriteChars::getVowel @ bci:5  L[0]=_ L[1]=_ STK[0]=#NULL STK[1]=#0 MON-BOX0=esp+16 MON-OBJ[0]=EBP
+        # FavoriteChars::myFavorites @ bci:2  L[0]=_ L[1]=_ L[2]=_ L[3]=_
+        # OopMap{ebp=Oop off=556}
+22c   	INT3   ; ShouldNotReachHere
+22c
+231   B23: #	N264 <- B9  Freq: 1.00016e-09
+231   	# exception oop is in EAX; no code emitted
+231   	MOV    ECX,EAX
+233   	ADD    ESP,24	# Destroy frame
+	POPL   EBP
+	
+237   	JMP    rethrow_stub
+237
+
+Compiled (c2)  47   nmethod (2)  FavoriteChars::myFavorites (34 bytes)
+ total in heap  [0xb3530448,0xb3530984] = 1340
+ relocation     [0xb35304fc,0xb353053c] = 64
+ main code      [0xb3530540,0xb3530780] = 576
+ stub code      [0xb3530780,0xb353078f] = 15
+ constants      [0xb353078f,0xb3530790] = 1
+ scopes data    [0xb3530790,0xb353084c] = 188
+ scopes pcs     [0xb353084c,0xb3530948] = 252
+ dependencies   [0xb3530948,0xb3530950] = 8
+ handler table  [0xb3530950,0xb3530968] = 24
+ nul chk table  [0xb3530968,0xb3530974] = 12
+ oops           [0xb3530974,0xb3530984] = 16
+pc-bytecode offsets:
+PcDesc(pc=0xb353053f offset=ffffffff):
+PcDesc(pc=0xb353055a offset=1a):
+   FavoriteChars::myFavorites  @-1
+PcDesc(pc=0xb3530594 offset=54):
+   FavoriteChars::getVowel  @-1
+   FavoriteChars::myFavorites  @2
+PcDesc(pc=0xb3530597 offset=57):
+   FavoriteChars::getVowel  @1
+   FavoriteChars::myFavorites  @2
+PcDesc(pc=0xb35305a3 offset=63):
+   FavoriteChars::getVowel  @5
+   FavoriteChars::myFavorites  @2
+PcDesc(pc=0xb35305a7 offset=67):
+   FavoriteChars::getVowel  @5
+   FavoriteChars::myFavorites  @14
+PcDesc(pc=0xb35305ab offset=6b):
+   FavoriteChars::getVowel  @5
+   FavoriteChars::myFavorites  @8
+PcDesc(pc=0xb35305bf offset=7f):
+   FavoriteChars::getVowel  @6
+   FavoriteChars::myFavorites  @14
+PcDesc(pc=0xb353060b offset=cb):
+   FavoriteChars::myFavorites  @19
+PcDesc(pc=0xb353060f offset=cf):
+   FavoriteChars::myFavorites  @28
+PcDesc(pc=0xb3530613 offset=d3):
+   FavoriteChars::myFavorites  @32
+PcDesc(pc=0xb3530626 offset=e6):
+   FavoriteChars::myFavorites  @14
+PcDesc(pc=0xb3530638 offset=f8):
+   FavoriteChars::myFavorites  @19
+PcDesc(pc=0xb35306ac offset=16c):
+   FavoriteChars::getVowel  @-1
+   FavoriteChars::myFavorites  @2
+PcDesc(pc=0xb35306cc offset=18c):
+   FavoriteChars::getVowel  @5
+   FavoriteChars::myFavorites  @2
+PcDesc(pc=0xb35306d1 offset=191):
+   FavoriteChars::getVowel  @5
+   FavoriteChars::myFavorites  @2
+PcDesc(pc=0xb353074c offset=20c):
+   FavoriteChars::getVowel  @-1
+   FavoriteChars::myFavorites  @2
+PcDesc(pc=0xb3530755 offset=215):
+   FavoriteChars::getVowel  @6
+   FavoriteChars::myFavorites  @14
+PcDesc(pc=0xb353076c offset=22c):
+   FavoriteChars::getVowel  @5
+   FavoriteChars::myFavorites  @2
+PcDesc(pc=0xb3530771 offset=231):
+   FavoriteChars::myFavorites  @19
+PcDesc(pc=0xb3530791 offset=251):
+OopMapSet contains 4 OopMaps
+
+#0 
+OopMap{off=248}
+#1 
+OopMap{ebp=Oop off=364}
+#2 
+OopMap{[8]=Oop [12]=Oop off=396}
+#3 
+OopMap{ebp=Oop off=556}
+------------------------------------------------------------------------
+FavoriteChars.myFavorites()[C
+  interpreter_invocation_count:    22261 
+  invocation_counter:               7263 
+  backedge_counter:                    1 
+
+0 aload_0
+1 iconst_0
+2 invokevirtual 3 <getVowel> <(I)C> 
+  0   bci: 2    VirtualCallData     count(18962) entries(1)
+                                    'FavoriteChars'(18962)
+5 istore_1
+6 aload_0
+7 iconst_1
+8 invokevirtual 3 <getVowel> <(I)C> 
+  24  bci: 8    VirtualCallData     count(18962) entries(1)
+                                    'FavoriteChars'(18962)
+11 istore_2
+12 aload_0
+13 iconst_2
+14 invokevirtual 3 <getVowel> <(I)C> 
+  48  bci: 14   VirtualCallData     count(18962) entries(1)
+                                    'FavoriteChars'(18962)
+17 istore_3
+18 iconst_3
+19 newarray char
+21 dup
+22 iconst_0
+23 iload_1
+24 castore
+25 dup
+26 iconst_1
+27 iload_2
+28 castore
+29 dup
+30 iconst_2
+31 iload_3
+32 castore
+33 areturn
+------------------------------------------------------------------------

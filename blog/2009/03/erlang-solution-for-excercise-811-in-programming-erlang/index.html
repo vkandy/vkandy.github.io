@@ -63,9 +63,9 @@
 
 <div id="content" class="container">
     <div class="hero-unit">
-        <h1>Erlang vs. Java message passing times</h1>
-        <p>Comparing ring benchmark in Erlang and Java</p>
-        <small>Vijay Kandy&nbsp;&nbsp;<i class="icon-calendar"></i>&nbsp;March 31, 2009</small>
+        <h1>Erlang solution for excercise 8.11 in Programming Erlang</h1>
+        <p>Ring benchmark in Erlang</p>
+        <small>Vijay Kandy&nbsp;&nbsp;<i class="icon-calendar"></i>&nbsp;March 6, 2009</small>
     </div>
 
     <hr />
@@ -73,48 +73,174 @@
     <div class="row" id="post">
         <div class="span12">
             <article class="post single-post image-post">
-                I benchmarked ring programs in Erlang and Java for various values of N (number of threads) and M (number of messages). You can see my <a href="../../../../blog/2009/03/erlang-solution-for-excercise-811-in-programming-erlang/">Erlang solution here</a> and <a href="../../../../blog/2009/02/java-solution-for-excercise-811-in-programming-erlang">Java solution here</a>. For N, I ran 10, 50, 100, 500, 1000, 5000 and 10000 threads. The values I used for M are 10, 100, 1K, 10K, 100K, 1 Million.
+                In my <a href="../../../../blog/2009/02/java-solution-for-excercise-811-in-programming-erlang">previous post</a>, I presented a Java solution to the Ring problem. Following is my Erlang solution.
 
-                The results are available in Google Spreadsheet (no login necessary):
-                <a href="http://spreadsheets.google.com/ccc?key=p6lbXDA9b-EEO5KGTm2r-Ag" target="_blank">http://spreadsheets.google.com/ccc?key=p6lbXDA9b-EEO5KGTm2r-Ag</a>
+<pre class="brush: erlang; first-line: 1;">
+-module(ring_benchmark).
+-export([start/2, ring_starter/1, ring_member/1, count_down/0]).
 
-                The report can also be viewed in HTML format:
-                <a href="http://spreadsheets.google.com/pub?key=p6lbXDA9b-EEO5KGTm2r-Ag&output=html" target="_blank">http://spreadsheets.google.com/pub?key=p6lbXDA9b-EEO5KGTm2r-Ag&output=html</a>
+start(N, M) ->
+	statistics(runtime),
+	statistics(wall_clock),
 
-                Note that the times published are wall clock times. Here is my hardware info and the commands I ran:
-                <br/>
-                <table>
-                    <tr>
-                        <td><b>Environment</b></td>
-                        <td>Pentium(R) D 3.00GHz, 1GB RAM, Dual Core, Windows XP</td>
-                    </tr>
-                    <tr>
-                        <td><b>Java params</b></td>
-                        <td>java -server -Xss1K</td>
-                    </tr>
-                    <tr>
-                        <td><b>Erlang params</b></td>
-                        <td>erl (didn't need -p)</td>
-                    </tr>
-                </table>
+	CountDown = spawn(?MODULE, count_down, []),
+	First = spawn(?MODULE, ring_starter, [CountDown]),
+	Last = init_ring(N-1, First),
 
-                The following 2 graphs show times (in millis) when 10, 100, 1K, 10K, 100K, 1 Million messages were passed around in a ring of 5,000 threads.
+	{_, Spawn_RT} = statistics(runtime),
+	{_, Spawn_WC} = statistics(wall_clock),
+	io:format("Spawn time=~p (~p) milliseconds~n" , [Spawn_RT, Spawn_WC]),
 
-                <img src="ring_benchmark1.png" alt="ring_benchmark1" title="ring_benchmark1" width="406" height="320" class="size-full wp-image-63" />
+	Messages = create_messages(M),
 
-                <img src="ring_benchmark2.png" alt="ring_benchmark2" title="ring_benchmark2" width="478" height="320" class="size-full wp-image-64" />
+	CountDown ! {start},
+	[First ! {pass, Last, AMessage} || AMessage <- Messages],
 
-                <b>Lessons learned:</b>
+	ok.
 
-                I know this is a micro benchmark but still it was a good test to compare message passing in Erlang and in Java.
+init_ring(0, Neighbor) ->
+	Neighbor;
+init_ring(N, Neighbor) ->
+	Next = spawn(?MODULE, ring_member, [Neighbor]),
+	init_ring(N-1, Next).
 
-                Apart from the usual - Java slow, Erlang fast - stuff, which we all know by now, I wanted to say I was pleasantly surprised that writing the solution in Erlang was a lot easier than writing in Java. Not having to worry about threads sharing objects made it easier to think and write code. I really appreciated <a href="http://en.wikipedia.org/wiki/Tail_recursion" target="_blank">tail recursion</a> is Erlang. As you can see, it takes fewer lines to solve the problem in Erlang. I've come to like the <a href="http://en.wikipedia.org/wiki/Actor_model">Actor model</a> more.
+%% Creates M messages. The last message is {quit}
+create_messages(1) ->
+	[quit];
+create_messages(M) ->
+	[M | create_messages(M - 1)].
 
-                I should also say that the Java solution would have been messier if not for <code>java.util.concurrent</code> classes. Without <code>java.util.concurrent</code> classes it would have been difficult to test and verify that the solution actually worked.
+%% First member in the ring
+ring_starter(CountDown) ->
+	receive
+		{quit} ->
+			CountDown ! {stop};
+		{Message} ->
+			ring_starter(CountDown);
+		{pass, To, Message} ->
+			To ! {Message},
+			ring_starter(CountDown)
+	end.
 
-                I could not run more than 5,000 threads in Java so I used -Xss1K option and was able to run 10,000 threads. In erlang however, I could create 30,000 processes. The size of a process in Erlang is just a few bytes.
+%% Represents all other members in a ring
+ring_member(Neighbor) ->
+	receive
+		{quit} ->
+			Neighbor ! {quit};
+		{Message} ->
+			Neighbor ! {Message},
+			ring_member(Neighbor)
+	end.
 
-                Lastly, I should mention that while running 10,000 threads in Java the process size of JVM was close to 200MB. The process size of Erlang VM while running 10,000 processes was just about 30MB.
+count_down() ->
+	receive
+		{start} ->
+			statistics(runtime),
+			statistics(wall_clock),
+			count_down();
+		{stop} ->
+			{_, PassEnd_RT} = statistics(runtime),
+			{_, PassEnd_WC} = statistics(wall_clock),
+			io:format("Message passing time=~p (~p) milliseconds~n" , [PassEnd_RT, PassEnd_WC])
+	end.
+</pre>
+
+                The starting point of the program is <code>start(N, M)</code>. A ring of N members is constructed with <code>init_ring()</code> functions. The Pid of each member is passed to the next member during creation of <code>ring_member</code>. The first member of the ring is <code>ring_starter()</code>. It starts passing messages by sending message to the last member and waits for the same message to come back to it. The last message is <code>{quit}</code>. When the last message comes back to the <code>ring_starter()</code> the program ends. <code>count_down()</code> is used to track the time taken.
+
+                I've stripped out io:format() statements, which are like debug statements. They show messages being passed around in the ring. The same program with io:format() statements is given below:
+
+<pre class="brush: erlang; first-line: 1;">
+-module(ring).
+-export([start/2, ring_starter/1, ring_member/1, count_down/0]).
+
+start(N, M) ->
+	statistics(runtime),
+	statistics(wall_clock),
+
+	CountDown = spawn(?MODULE, count_down, []),
+	First = spawn(?MODULE, ring_starter, [CountDown]),
+	Last = init_ring(N-1, First),
+
+	{_, Spawn_RT} = statistics(runtime),
+	{_, Spawn_WC} = statistics(wall_clock),
+	io:format("Spawn time=~p (~p) milliseconds~n" , [Spawn_RT, Spawn_WC]),
+
+	Messages = create_messages(M),
+
+	CountDown ! {start},
+	[First ! {pass, Last, AMessage} || AMessage <- Messages],
+
+	ok.
+
+init_ring(0, Neighbor) ->
+	Neighbor;
+init_ring(N, Neighbor) ->
+	Next = spawn(?MODULE, ring_member, [Neighbor]),
+	init_ring(N-1, Next).
+
+%% Creates M messages. The last message is {quit}
+create_messages(1) ->
+	[quit];
+create_messages(M) ->
+	[M | create_messages(M - 1)].
+
+%% First member in the ring
+ring_starter(CountDown) ->
+	receive
+		{quit} ->
+			CountDown ! {stop},
+			io:format("~w received ~w~n", [self(), quit]);
+		{Message} ->
+			io:format("~w received ~w~n", [self(), Message]),
+			ring_starter(CountDown);
+		{pass, To, Message} ->
+			To ! {Message},
+			io:format("~w sent ~w to ~w~n", [self(), Message, To]),
+			ring_starter(CountDown)
+	end.
+
+%% Represents all other members in a ring
+ring_member(Neighbor) ->
+	receive
+		{quit} ->
+			Neighbor ! {quit},
+			io:format("~w sent ~w to ~w~n", [self(), quit, Neighbor]);
+		{Message} ->
+			Neighbor ! {Message},
+			io:format("~w sent ~w to ~w~n", [self(), Message, Neighbor]),
+			ring_member(Neighbor)
+	end.
+
+count_down() ->
+	receive
+		{start} ->
+			statistics(runtime),
+			statistics(wall_clock),
+			count_down();
+		{stop} ->
+			{_, PassEnd_RT} = statistics(runtime),
+			{_, PassEnd_WC} = statistics(wall_clock),
+			io:format("Message passing time=~p (~p) milliseconds~n" , [PassEnd_RT, PassEnd_WC])
+	end.
+</pre>
+
+                I construct a list of M messages and pass each message at a time. This line does exactly that:
+
+<pre name="code">
+[First ! {pass, Last, AMessage} || AMessage <- Messages]
+</pre>
+
+                This is equivalent to the call: <code>pass_messages(First, Last, Messages)</code>
+
+<pre class="brush: erlang; first-line: 1;">
+pass_messages(First, Last, [Message | []]) ->
+	First ! {pass, Last, Message};
+pass_messages(First, Last, [Message | Rest]) ->
+	First ! {pass, Last, Message},
+	pass_messages(First, Last, Rest).
+</pre>
+
+                In my next post, I'll show message processing times for different values of N and M in Java 6 and Erlang.
             </article>
         </div>
     </div>
@@ -195,7 +321,7 @@
 <script type="text/javascript" src="../../../../js/shBrushPlain.js"></script>
 <script type="text/javascript" src="../../../../js/shBrushJava.js"></script>
 <script type="text/javascript" src="../../../../js/shBrushBash.js"></script>
-<script type="text/javascript" src="../../../../js/shBrushVb.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushErlang.js"></script>
 <script type="text/javascript">SyntaxHighlighter.all();</script>
 </body>
 

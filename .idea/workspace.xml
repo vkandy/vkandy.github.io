@@ -1,13 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="be117def-e54c-418b-8da5-8e49f60de50f" name="Default" comment="-- added last published post">
-      <change type="MOVED" beforePath="$PROJECT_DIR$/about.html" afterPath="$PROJECT_DIR$/about/index.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/blog.html" afterPath="$PROJECT_DIR$/blog/index.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/blog/2012/03/inject-before-after-advice-using-groovy-ast-transformation.html" afterPath="$PROJECT_DIR$/blog/2012/03/inject-before-after-advice-using-groovy-ast-transformation/index.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/contact.html" afterPath="$PROJECT_DIR$/contact/index.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/services.html" afterPath="$PROJECT_DIR$/services/index.html" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/index.html" afterPath="$PROJECT_DIR$/index.html" />
+    <list default="true" id="be117def-e54c-418b-8da5-8e49f60de50f" name="Default" comment="">
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/blog/2012/03/autocomplete-using-a-trie-in-redis/index.html" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/blog/index.html" afterPath="$PROJECT_DIR$/blog/index.html" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="vkandy.github.io.iws" />
@@ -33,10 +29,10 @@
   <component name="FileEditorManager">
     <leaf>
       <file leaf-file-name="index.html" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/blog/2012/03/inject-before-after-advice-using-groovy-ast-transformation/index.html">
+        <entry file="file://$PROJECT_DIR$/blog/2012/03/autocomplete-using-a-trie-in-redis/index.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.33955225" vertical-offset="9232" max-vertical-offset="10890">
-              <caret line="523" column="58" selection-start-line="523" selection-start-column="58" selection-end-line="523" selection-end-column="58" />
+            <state vertical-scroll-proportion="7.873134" vertical-offset="1054" max-vertical-offset="5382">
+              <caret line="293" column="0" selection-start-line="293" selection-start-column="0" selection-end-line="293" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -45,8 +41,8 @@
       <file leaf-file-name="index.html" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/blog/index.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-41.25926" vertical-offset="200" max-vertical-offset="2772">
-              <caret line="73" column="101" selection-start-line="73" selection-start-column="101" selection-end-line="73" selection-end-column="101" />
+            <state vertical-scroll-proportion="-7.851852" vertical-offset="1228" max-vertical-offset="3006">
+              <caret line="80" column="60" selection-start-line="80" selection-start-column="60" selection-end-line="80" selection-end-column="60" />
               <folding />
             </state>
           </provider>
@@ -75,8 +71,9 @@
         <option value="$PROJECT_DIR$/contact/index.html" />
         <option value="$PROJECT_DIR$/services/index.html" />
         <option value="$PROJECT_DIR$/blog/2012/03/inject-before-after-advice-using-groovy-ast-transformation/inject-before-after-advice-using-groovy-ast-transformation.html" />
-        <option value="$PROJECT_DIR$/blog/index.html" />
         <option value="$PROJECT_DIR$/blog/2012/03/inject-before-after-advice-using-groovy-ast-transformation/index.html" />
+        <option value="$PROJECT_DIR$/blog/index.html" />
+        <option value="$PROJECT_DIR$/blog/2012/03/autocomplete-using-a-trie-in-redis/index.html" />
       </list>
     </option>
   </component>
@@ -208,6 +205,32 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
+              <option name="myItemId" value="blog" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="2012" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="03" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="autocomplete-using-a-trie-in-redis" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="vkandy.github.io" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="vkandy.github.io" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
               <option name="myItemId" value="about" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
@@ -225,6 +248,7 @@
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/blog/2012/03/autocomplete-using-a-trie-in-redis" />
       <recent name="$PROJECT_DIR$/blog" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
@@ -277,7 +301,13 @@
       <option name="project" value="LOCAL" />
       <updated>1419232807527</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="-- fixed links">
+      <created>1419377908347</created>
+      <option name="number" value="00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1419377908347</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -341,18 +371,34 @@
       <TodoPanelSettings />
     </option>
     <MESSAGE value="-- added last published post" />
-    <option name="LAST_COMMIT_MESSAGE" value="-- added last published post" />
+    <MESSAGE value="-- fixed links" />
+    <option name="LAST_COMMIT_MESSAGE" value="-- fixed links" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager />
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/blog/2012/03/inject-before-after-advice-using-groovy-ast-transformation/index.html">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="10890">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/blog/index.html">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="200" max-vertical-offset="2772">
+          <caret line="73" column="101" selection-start-line="73" selection-start-column="101" selection-end-line="73" selection-end-column="101" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/index.html">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="378" max-vertical-offset="3060">
           <caret line="53" column="42" selection-start-line="53" selection-start-column="42" selection-end-line="53" selection-end-column="42" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -360,7 +406,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="324" max-vertical-offset="2664">
           <caret line="53" column="42" selection-start-line="53" selection-start-column="42" selection-end-line="53" selection-end-column="42" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -376,7 +421,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="432" max-vertical-offset="3132">
           <caret line="40" column="39" selection-start-line="40" selection-start-column="39" selection-end-line="40" selection-end-column="39" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -392,7 +436,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="324" max-vertical-offset="2808">
           <caret line="53" column="42" selection-start-line="53" selection-start-column="42" selection-end-line="53" selection-end-column="42" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -400,7 +443,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="378" max-vertical-offset="3060">
           <caret line="53" column="42" selection-start-line="53" selection-start-column="42" selection-end-line="53" selection-end-column="42" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -408,7 +450,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="324" max-vertical-offset="2664">
           <caret line="53" column="42" selection-start-line="53" selection-start-column="42" selection-end-line="53" selection-end-column="42" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -424,7 +465,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="432" max-vertical-offset="3132">
           <caret line="40" column="39" selection-start-line="40" selection-start-column="39" selection-end-line="40" selection-end-column="39" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -440,7 +480,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="324" max-vertical-offset="2808">
           <caret line="53" column="42" selection-start-line="53" selection-start-column="42" selection-end-line="53" selection-end-column="42" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -448,7 +487,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="378" max-vertical-offset="3060">
           <caret line="53" column="42" selection-start-line="53" selection-start-column="42" selection-end-line="53" selection-end-column="42" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -456,7 +494,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="324" max-vertical-offset="2664">
           <caret line="53" column="42" selection-start-line="53" selection-start-column="42" selection-end-line="53" selection-end-column="42" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -472,7 +509,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="432" max-vertical-offset="3132">
           <caret line="40" column="39" selection-start-line="40" selection-start-column="39" selection-end-line="40" selection-end-column="39" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -488,7 +524,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="324" max-vertical-offset="2808">
           <caret line="53" column="42" selection-start-line="53" selection-start-column="42" selection-end-line="53" selection-end-column="42" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -496,7 +531,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.5708955" vertical-offset="486" max-vertical-offset="3132">
           <caret line="44" column="46" selection-start-line="44" selection-start-column="46" selection-end-line="44" selection-end-column="46" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -504,7 +538,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.47014925" vertical-offset="540" max-vertical-offset="2664">
           <caret line="44" column="46" selection-start-line="44" selection-start-column="46" selection-end-line="44" selection-end-column="46" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -512,7 +545,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.36940297" vertical-offset="594" max-vertical-offset="2808">
           <caret line="44" column="46" selection-start-line="44" selection-start-column="46" selection-end-line="44" selection-end-column="46" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -520,22 +552,29 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.3022388" vertical-offset="324" max-vertical-offset="3060">
           <caret line="27" column="0" selection-start-line="27" selection-start-column="0" selection-end-line="27" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/blog/2012/03/inject-before-after-advice-using-groovy-ast-transformation/index.html">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-8.740741" vertical-offset="9232" max-vertical-offset="10890">
+          <caret line="526" column="39" selection-start-line="526" selection-start-column="39" selection-end-line="526" selection-end-column="39" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/blog/index.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-41.25926" vertical-offset="200" max-vertical-offset="2772">
-          <caret line="73" column="101" selection-start-line="73" selection-start-column="101" selection-end-line="73" selection-end-column="101" />
+        <state vertical-scroll-proportion="-7.851852" vertical-offset="1228" max-vertical-offset="3006">
+          <caret line="80" column="60" selection-start-line="80" selection-start-column="60" selection-end-line="80" selection-end-column="60" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/blog/2012/03/inject-before-after-advice-using-groovy-ast-transformation/index.html">
+    <entry file="file://$PROJECT_DIR$/blog/2012/03/autocomplete-using-a-trie-in-redis/index.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.33955225" vertical-offset="9232" max-vertical-offset="10890">
-          <caret line="523" column="58" selection-start-line="523" selection-start-column="58" selection-end-line="523" selection-end-column="58" />
+        <state vertical-scroll-proportion="7.873134" vertical-offset="1054" max-vertical-offset="5382">
+          <caret line="293" column="0" selection-start-line="293" selection-start-column="0" selection-end-line="293" selection-end-column="0" />
           <folding />
         </state>
       </provider>

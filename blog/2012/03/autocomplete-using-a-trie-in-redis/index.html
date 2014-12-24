@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<!--[if lt IE 7 ]><html class="ie ie6" lang="en"> <![endif]-->
+<!--[if IE 7 ]><html class="ie ie7" lang="en"> <![endif]-->
+<!--[if IE 8 ]><html class="ie ie8" lang="en"> <![endif]-->
+<!--[if (gte IE 9)|!(IE)]><!-->
+<html class="not-ie" lang="en">
+<!--<![endif]-->
+
+<head>
+    <meta charset="utf-8">
+    <title>Kandy Software ⊳ Services</title>
+
+    <meta name="author" content="Vijay Kandy">
+    <meta name="description" content="Software Development and Consultancy">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    <link href="../../../../css/style.min.css" rel="stylesheet">
+    <link href="../../../../css/font-awesome/font-awesome.css" rel="stylesheet">
+    <!--[if IE 7]>
+    <link href="../../../../css/font-awesome/font-awesome-ie7.css" rel="stylesheet">
+    <![endif]-->
+
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800' rel='stylesheet' type='text/css'>
+
+    <!--[if lt IE 9]>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <script>
+        !window.jQuery && document.write(unescape('%3Cscript src="js/jquery-1.8.3.min.js"%3E%3C/script%3E'))
+    </script>
+
+    <link type="text/css" rel="stylesheet" href="../../../../css/shCoreDefault.css"/>
+</head>
+
+<body>
+<header id="header">
+    <div class="navbar">
+        <div class="navbar-inner">
+            <div class="container">
+                <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </a>
+                <a class="brand" href="../../../../">
+                    <b>Kandy</b>&nbsp;Software
+                </a>
+                <div class="nav-collapse">
+                    <ul class="nav">
+                        <li><a href="../../../../">Home</a></li>
+                        <li><a href="../../../../services">Services</a></li>
+                        <li class="active"><a href="../../../../blog">Blog</a></li>
+                        <li><a href="../../../../about">About us</a></li>
+                        <li><a href="../../../../contact">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div id="content" class="container">
+    <div class="hero-unit">
+        <h1>Autocomplete using a Trie in Redis</h1>
+        <p>An implementation of trie data structure using Redis commands</p>
+    </div>
+
+    <hr />
+
+    <div class="row" id="post">
+        <div class="span12">
+            <article class="post single-post image-post">
+                <div class="entry-meta">
+                    <span class="entry-type"></span>
+                    <span class="entry-date">March 18th, 2012</span>
+                </div>
+
+                <div class="entry-content">
+                    <p>
+                        If you are implementing autocomplete feature, consider using a trie. In this post, I'll describe how to implement a trie in Redis. To be precise, a string trie. Redis is ideal for this purpose because it's fast, lightweight and is ideal for cache.
+                    </p>
+
+                    <p>
+                        Now let's store some phrases in the trie:
+                    </p>
+<pre class="brush: text">
+Airline Baby Ban
+Vitamin D Sources
+Vitamin D Study
+Blood Sugar
+</pre>
+
+                    <p>
+                        They are stored in a trie as shown below. Let's use <b>trie</b> as our root element.
+                    </p>
+
+                    <p>
+                        To store this in Redis, we'll tokenize the search phrases and store each increasing sequence of tokens as a key. The next token in the sequence is stored as value. Let's use sorted sets to store values.
+                    </p>
+
+<pre class="brush: text">
+redis>ZADD trie 97 airline
+redis>ZADD trie->airline 98 baby
+redis>ZADD trie->airline->baby 98 ban
+redis>ZADD trie 98 blood
+redis>ZADD trie->blood 98 sugar
+redis>ZADD trie 97 vitamin
+redis>ZADD trie->vitamin 97 d
+redis>ZADD trie->vitamin->d 97 sources
+redis>ZADD trie->vitamin->d 97 study
+</pre>
+
+                    <p>
+                        Given a partial phrase, you can retrieve a subtree using one of the following commands
+                    </p>
+
+<pre class="brush: text">
+redis>ZRANGE "trie->vitamin->d" 0 -1
+1) "study"
+2) "sources"
+redis>ZRANGEBYSCORE "trie->vitamin->d" -INF +INF
+1) "sources"
+2) "study"
+</pre>
+
+                    <p>
+                        Let's modify the trie a little bit. Let's use the frequency of a token as it's score. So instead of <code>ZADD</code>, we'll use <code>ZINCRBY</code> with a score of 1. <code>ZINCRBY</code> adds a token with score 1 if it's not found. Otherwise, the score is incremented by 1.
+                    </p>
+
+                    <p>
+                        Here's a Node.js implementation of trie described above using Redis as data store. You can tweak it to make a more sophisticated trie.
+                    </p>
+
+<pre class="brush: js">
+/**
+ * trie.js
+ * A simple trie to suggest frequent phrases
+ */
+var redis = require('redis').createClient();
+
+// Default constructor
+var Trie = function(trieName) {
+    this.root = 'trie';
+    this.separator = '->';
+};
+exports.Trie = Trie;
+
+// Stores a search phrase
+Trie.prototype.addPhrase = function(phrase) {
+    var key = this.root;
+    var words = phrase.split(' ');
+    for(var index in words) {
+        var word = words[index].toLowerCase();
+        this.addWord(word, key);
+        key = (key + this.separator + word);
+    }
+};
+
+// Stores a word as a child of given key
+Trie.prototype.addWord = function(word, key) {
+    var parent = key || this.root;
+    // var score = word.charCodeAt(0);
+    // redis.zadd(parent, score, word);
+    redis.zincrby(parent, 1, word);
+};
+
+// Suggests a next word based on the input
+Trie.prototype.suggest = function(phrase, callback) {
+    var prefix = this.root + this.separator;
+    var path = phrase.toLowerCase().split(' ').join(this.separator);
+    var key = prefix + path;
+    redis.zrevrangebyscore(key, '+inf', '-inf', callback);
+};
+
+// Disconnect from redis
+Trie.prototype.end = function() {
+    redis.quit();
+};
+</pre>
+
+                    <p>
+                        It's used as follows.
+                    </p>
+
+<pre class="brush: js">
+/**
+ * test.js
+ * A simple trie to suggest frequent phrases
+ */
+var t = require("./trie");
+
+var trie = new t.Trie();
+
+trie.addPhrase('Emma Watson');
+trie.addPhrase('Airline Baby Ban');
+trie.addPhrase('Vitamin D Study');
+trie.addPhrase('Vitamin D Sources');
+trie.addPhrase('Vitamin D Sources');
+trie.addPhrase('Vitamin D Sources');
+trie.addPhrase('Blood Sugar');
+trie.addPhrase('Bathroom Cleaning Tips');
+
+
+trie.suggest('vitamin d', function(err, reply) {
+    if(err) console.log(err);
+    if(reply)  console.log(reply);
+    trie.end();
+});
+</pre>
+
+<pre class="brush: text">
+$ node test.js
+[ 'study', 'sources' ]
+</pre>
+    
+                    <p><a href="#" title=""><i>Vijay Kandy</i></a></p>
+                </div>
+
+                <div class="clr"></div>
+
+                <section id="comments">
+
+                </section>
+            </article>
+        </div>
+    </div>
+</div>
+
+<p/>
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="span4">
+                <h3>Kandy Software Inc.</h3>
+                <ul>
+                    <li><a href="/index.html" title="">Home</a>
+                    </li>
+                    <li><a href="/services.html" title="">Services</a>
+                    </li>
+                    <li><a href="/about.html" title="">About us</a>
+                    </li>
+                    <li><a href="/contact.html" title="">Contact</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="span4 social-networks">
+                <h3>Stay in touch</h3>
+                <p>Stay in touch on social networks</p>
+                <a href="https://github.com/vkandy" title="Github" class="icon-github"></a>
+                <a href="https://www.linkedin.com/in/vijaykandy" title="Linked In" class="icon-linkedin"></a>
+            </div>
+            <div class="span4">
+                <h3>Newsletter</h3>
+                <p>Subscribe to our monthly newsletter and be the first to know about our news and special deals!</p>
+                <form>
+                    <input type="text" placeholder="Enter your E-mail" />
+                    <input type="submit" class="btn" value="Ok" />
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="footer-extra">
+        <div class="container">
+            <div class="row">
+                <div class="span4">
+                    &copy; 2013 Kandy Software Inc.
+                </div>
+                <div class="span4">
+                </div>
+                <div class="span4">
+                    <i class="icon-envelope"></i> &nbsp; admin@kandysoftware.com
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script type="text/javascript" src="../../../../js/bootstrap.min.js"></script>
+<script type="text/javascript" src="../../../../js/jquery.isotope.min.js"></script>
+<script type="text/javascript" src="../../../../js/jquery.touchSwipe.js"></script>
+<script type="text/javascript" src="../../../../js/jquery.hotkeys.min.js"></script>
+<script type="text/javascript" src="../../../../js/functions.min.js?v=2"></script>
+<script type="text/javascript" src="../../../../js/shCore.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushPlain.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushJScript.js"></script>
+<script type="text/javascript">SyntaxHighlighter.all();</script>
+</body>
+
+</html>

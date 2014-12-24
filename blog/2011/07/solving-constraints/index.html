@@ -63,8 +63,8 @@
 
 <div id="content" class="container">
     <div class="hero-unit">
-        <h1>Autocomplete using a Trie in Redis</h1>
-        <p>An implementation of trie data structure using Redis commands</p>
+        <h1>Solving Constraints</h1>
+        <p>Constraint programming in Oz</p>
     </div>
 
     <hr />
@@ -74,12 +74,94 @@
             <article class="post single-post image-post">
                 <div class="entry-meta">
                     <span class="entry-type"></span>
-                    <span class="entry-date">March 18th, 2012</span>
+                    <span class="entry-date">July 27th, 2011</span>
                 </div>
 
                 <div class="entry-content">
+                    Here are two problems from <a href="http://projecteuler.net">Project Euler</a> which I thought can be solved elegantly in Oz using constraint programming. Instead of naively iterating over numbers, Oz lets us define a finite domain in which a solution exists, set some constraints and then propagates and distributes those constraints to arrive at the solution.
 
-    
+                    <h3>Project Euler Problem 9</h3>
+                    The <a href="http://projecteuler.net/index.php?section=problems&id=9">problem definition</a> is as follows:
+
+                    A Pythagorean triplet is a set of three natural numbers, [latex]a  b  c[/latex], for which, [latex]a^2 + b^2 = c^2[/latex]
+
+                    For example, [latex]3^2 + 4^2 = 9 + 16 = 25 = 5^2[/latex].
+
+                    There exists exactly one Pythagorean triplet for which [latex]a + b + c = 1000[/latex]. Find the product [latex]abc[/latex].
+
+                    <h3>Solution</h3>
+<pre class="brush: plain; first-line: 1;">
+%% ============================================================
+%% Find X, Y, Z such that X^2 + Y^2 = Z^2 and X + Y + Z == 1000
+%% ============================================================
+local
+   proc {Py Numbers}
+      X Y Z
+   in
+      Numbers = sol(x:X y:Y z:Z)
+      Numbers ::: 1#1000
+
+      {FD.distinct Numbers}
+      {FD.sum [X Y Z] '=:' 1000}
+      {FD.times X X} + {FD.times Y Y} =: {FD.times Z Z}
+      {FD.distribute ff Numbers}
+   end
+in
+   {ExploreOne Py}
+end
+</pre>
+
+                    Here's the search tree for this implementation. We evaluated just 200 combinations of X, Y and Z before arriving at the solution.
+                    <a href="problem9-Oz-Explorer.png"><img src="problem9-Oz-Explorer.png" alt="" title="Oz Explorer for problem 9" width="300" height="218" style="float: none;" /></a>
+
+                    Finally the triplet that solves the given constraints:
+                    <a href="Screenshot-Oz-Inspector.png"><img src="Screenshot-Oz-Inspector.png" alt="" title="Triplets" width="300" height="170" style="float: right;" /></a>
+
+                    The three numbers that solve the constraints are <strong>200, 375, 425</strong>. Obviously, <strong>200 + 375 + 425 = 1000</strong>. So, their product is <strong>31875000</strong> which is the answer to the problem.
+
+                    <h3>Project Euler Problem 30</h3>
+                    <a href="http://projecteuler.net/index.php?section=problems&id=30">Problem 30</a> is only slightly harder:
+
+                    Surprisingly there are only three numbers that can be written as the sum of fourth powers of their digits:
+
+                    [latex]
+                    1634 = 1^4 + 6^4 + 3^4 + 4^4
+
+                    8208 = 8^4 + 2^4 + 0^4 + 8^4
+
+                    9474 = 9^4 + 4^4 + 7^4 + 4^4
+                    [/latex]
+
+                    As [latex]1 = 1^4[/latex] is not a sum it is not included. The sum of these numbers is [latex]1634 + 8208 + 9474 = 19316[/latex].
+
+                    Find the sum of all the numbers that can be written as the sum of fifth powers of their digits.
+
+                    <h3>Solution</h3>
+<pre class="brush: plain; first-line: 1;">
+local
+   proc {FifthPowers Numbers}
+      A B C D E F
+   in
+      Numbers = sol(a:A b:B c:C d:D e:E f:F)
+      Numbers ::: 0#9
+
+      A + B + C + D + E + F >: 1
+      A*100000 + B*10000 + C*1000 + D*100 + E*10 + F =:
+      {FD.power A 5} + {FD.power B 5} + {FD.power C 5} + {FD.power D 5} + {FD.power E 5} + {FD.power F 5}
+
+      {FD.distribute ff Numbers}
+   end
+in
+   % {ExploreAll FifthPowers}
+   {Browse {SearchAll FifthPowers}}
+end
+</pre>
+
+                    Oz Explorer shows all possible numbers matching the requirements.
+                    <a href="Screenshot-Oz-Browser.png"><img src="Screenshot-Oz-Browser.png" alt="" title="Problem 30 solution" width="300" height="148" style="float: right;" /></a>
+
+                    The numbers which can be represented as the sum of fifth powers of their digits are <strong>4150</strong>, <strong>4151</strong>, <strong>54748</strong>, <strong>92727</strong>, <strong>93084</strong> and <strong>194979</strong>. Their sum is <strong>443839</strong>.
+
                     <p><a href="#" title=""><i>Vijay Kandy</i></a></p>
                 </div>
 

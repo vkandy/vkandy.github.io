@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<!--[if lt IE 7 ]><html class="ie ie6" lang="en"> <![endif]-->
+<!--[if IE 7 ]><html class="ie ie7" lang="en"> <![endif]-->
+<!--[if IE 8 ]><html class="ie ie8" lang="en"> <![endif]-->
+<!--[if (gte IE 9)|!(IE)]><!-->
+<html class="not-ie" lang="en">
+<!--<![endif]-->
+
+<head>
+    <meta charset="utf-8">
+    <title>Kandy Software ⊳ Blog</title>
+
+    <meta name="author" content="Vijay Kandy">
+    <meta name="description" content="Software Development and Consultancy">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    <link href="../../../../css/style.min.css" rel="stylesheet">
+    <link href="../../../../css/font-awesome/font-awesome.css" rel="stylesheet">
+    <!--[if IE 7]>
+    <link href="../../../../css/font-awesome/font-awesome-ie7.css" rel="stylesheet">
+    <![endif]-->
+
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800' rel='stylesheet' type='text/css'>
+
+    <!--[if lt IE 9]>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <script>
+        !window.jQuery && document.write(unescape('%3Cscript src="js/jquery-1.8.3.min.js"%3E%3C/script%3E'))
+    </script>
+
+    <link type="text/css" rel="stylesheet" href="../../../../css/shCoreDefault.css"/>
+</head>
+
+<body>
+<header id="header">
+    <div class="navbar">
+        <div class="navbar-inner">
+            <div class="container">
+                <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </a>
+                <a class="brand" href="../../../../../../../">
+                    <b>Kandy</b>&nbsp;Software
+                </a>
+                <div class="nav-collapse">
+                    <ul class="nav">
+                        <li><a href="../../../../../../../">Home</a></li>
+                        <li><a href="../../../../services">Services</a></li>
+                        <li class="active"><a href="../../../../blog">Blog</a></li>
+                        <li><a href="../../../../about">About us</a></li>
+                        <li><a href="../../../../contact">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div id="content" class="container">
+    <div class="hero-unit">
+        <h1>Pausing Message Delivery in JBoss</h1>
+        <small>Vijay Kandy&nbsp;&nbsp;<i class="icon-calendar"></i>&nbsp;March 25, 2008</small>
+    </div>
+
+    <hr />
+
+    <div class="row" id="post">
+        <div class="span12">
+            <article class="post single-post image-post">
+                In my <a href="../../../../blog/2008/03/pausing-message-delivery-in-websphere">previous post</a> I described how to pause message delivery in WebSphere. Today I am going to show how to pause message delivery in JBoss. The technique is the same. Obtain MBean that control's a Queue or Topic and invoke methods on it. Alternatively in JBoss you can go to JMX Console:
+
+                <ol>
+                    <li>Go to http://localhost:8080/jmx-console</li>
+                    <li>Locate the Message Driven Bean and click on it. This takes you to MDB's MBean view</li>
+                    <li>Use <code>startDelivery()</code> or <code>stopDelivery()</code> to control message flow.</li>
+                </ol>
+
+                Following is a class that controls message delivery programmatically.
+<pre class="brush: java; first-line: 1;">
+/**
+ * @(#)DeliveryControl.java	Mar 25, 2008
+ */
+package com.ksi.demo.console;
+
+import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
+
+import org.jboss.ejb.plugins.jms.JMSContainerInvokerMBean;
+import org.jboss.mx.util.MBeanProxy;
+import org.jboss.mx.util.MBeanProxyCreationException;
+import org.jboss.mx.util.MBeanServerLocator;
+
+/**
+ * Control Message Delivery in JBoss.
+ */
+public class DeliveryControl {
+	private static final int START = 1;
+	private static final int STOP = 0;
+
+	/**
+	 * @see com.allstream.icms.core.jmx.JMXSupplement#startMessageDelivery(javax.management.ObjectName)
+	 */
+	public void startMessageDelivery(ObjectName mbeanName) {
+		invokeMethodOnJMSContainer(mbeanName, START);
+	}
+
+	/**
+	 * @see com.allstream.icms.core.jmx.JMXSupplement#stopMessageDelivery(javax.management.ObjectName)
+	 */
+	public void stopMessageDelivery(ObjectName mbeanName) {
+		invokeMethodOnJMSContainer(mbeanName, STOP);
+	}
+
+	protected void invokeMethodOnJMSContainer(final ObjectName objectName, final int method) {
+		try {
+            // Another way to locate JBoss MBeanServer
+			/**
+			Properties props = new Properties();
+			props.put(InitialContext.INITIAL_CONTEXT_FACTORY, "org.jnp.interfaces.NamingContextFactory");
+			props.put(InitialContext.PROVIDER_URL, "jnp://localhost:1099");
+			props.put(InitialContext.URL_PKG_PREFIXES, "org.jboss.naming:org.jnp.interfaces");
+			InitialContext iniCtx = new InitialContext(props);
+			MBeanServer mbeanServer = (MBeanServer) iniCtx.lookup("jmx/invoker/HttpAdaptor");
+			*/
+
+			MBeanServer mbeanServer = MBeanServerLocator.locateJBoss();
+			JMSContainerInvokerMBean invoker = (JMSContainerInvokerMBean) MBeanProxy.get(
+					JMSContainerInvokerMBean.class, objectName, mbeanServer);
+			if (method == STOP) {
+				invoker.stopDelivery();
+			} else if (method == START) {
+				invoker.startDelivery();
+			}
+		} catch (MBeanProxyCreationException e) {
+		} catch (Exception e) {
+		}
+	}
+
+	/**
+	 * Usage.
+	 *
+	 * @param s
+	 */
+	public static void main(String s[]) {
+		DeliveryControl control = new DeliveryControl();
+		String mbean = "binding=message-driven-bean,jndiName=local/DemoBean@711487,plugin=invoker,service=EJB";
+		try {
+			control.stopMessageDelivery(new ObjectName(mbean));
+		} catch (MalformedObjectNameException e) {
+		} catch (NullPointerException e) {
+		}
+	}
+}
+</pre>
+
+                The MBean I am looking for that corresponds to the MDB is show in line 76. You can see that the JNDI name ends with a number. JBoss assigns this number to <a href="http://wiki.jboss.org/wiki/Wiki.jsp?page=WhyDoesTheLocalNameContainARandomNumber" target="_blank">avoid name collisions</a>. The downside is that this number changes when JBoss is restarted. To avoid this problem you can assign a local JNDI name to your bean which doesnt not change after a restart. The following <code>ejb-jar.xml</code> shows how to assign a local JNDI name.
+
+<pre class="brush: xml; first-line: 1;">
+<enterprise-beans>
+    <message-driven >
+        <description>Listens to 'Demo' messages</description>
+        <display-name>Demo MDB to demonstrate JMS features</display-name>
+
+        <ejb-name>DemoBean</ejb-name>
+        <local-jndi-name>ejb/DemoLocal</local-jndi-name>
+        <ejb-class>com.ksi.demo.ejb.DemoBean</ejb-class>
+
+        <transaction-type>Container</transaction-type>
+        <message-selector>Type='Even'</message-selector>
+        <acknowledge-mode>Auto-acknowledge</acknowledge-mode>
+        <message-driven-destination>
+            <destination-type>javax.jms.Queue</destination-type>
+        </message-driven-destination>
+    </message-driven>
+</enterprise-beans>
+</pre>
+            </article>
+        </div>
+    </div>
+
+    <div class="clr"></div>
+
+    <hr />
+
+    <div class="row">
+        <div class="span12">
+            <ul class="tags">
+                <li><a href="#">java</a></li>
+                <li><a href="#">jms</a></li>
+                <li><a href="#">jboss</a></li>
+                <li><a href="#">pause</a></li>
+                <li><a href="#">message</a></li>
+                <li><a href="#">delivery</a></li>
+            </ul>
+
+            <section id="comments">
+            </section>
+        </div>
+    </div>
+</div>
+
+<p/>
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="span4">
+                <h3>Kandy Software Inc.</h3>
+                <ul>
+                    <li><a href="../../../../../" title="">Home</a></li>
+                    <li><a href="../../../../services" title="">Services</a></li>
+                    <li><a href="../../../../about" title="">About us</a></li>
+                    <li><a href="../../../../contact" title="">Contact</a></li>
+                </ul>
+            </div>
+            <div class="span4 social-networks">
+                <h3>Stay in touch</h3>
+                <p>Stay in touch on social networks</p>
+                <a href="https://github.com/vkandy" title="Github" class="icon-github"></a>
+                <a href="https://www.linkedin.com/in/vijaykandy" title="Linked In" class="icon-linkedin"></a>
+            </div>
+            <div class="span4">
+                <h3>Newsletter</h3>
+                <p>Subscribe to our monthly newsletter and be the first to know about our news and special deals!</p>
+                <form>
+                    <input type="text" placeholder="Enter your E-mail" />
+                    <input type="submit" class="btn" value="Ok" />
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="footer-extra">
+        <div class="container">
+            <div class="row">
+                <div class="span4">
+                    &copy; 2013 Kandy Software Inc.
+                </div>
+                <div class="span4">
+                </div>
+                <div class="span4">
+                    <i class="icon-envelope"></i> &nbsp; admin@kandysoftware.com
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script type="text/javascript" src="../../../../js/bootstrap.min.js"></script>
+<script type="text/javascript" src="../../../../js/jquery.isotope.min.js"></script>
+<script type="text/javascript" src="../../../../js/jquery.touchSwipe.js"></script>
+<script type="text/javascript" src="../../../../js/jquery.hotkeys.min.js"></script>
+<script type="text/javascript" src="../../../../js/functions.min.js?v=2"></script>
+<script type="text/javascript" src="../../../../js/shCore.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushPlain.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushJava.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushBash.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushXml.js"></script>
+<script type="text/javascript">SyntaxHighlighter.all();</script>
+</body>
+
+</html>

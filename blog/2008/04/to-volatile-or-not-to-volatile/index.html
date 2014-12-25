@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<!--[if lt IE 7 ]><html class="ie ie6" lang="en"> <![endif]-->
+<!--[if IE 7 ]><html class="ie ie7" lang="en"> <![endif]-->
+<!--[if IE 8 ]><html class="ie ie8" lang="en"> <![endif]-->
+<!--[if (gte IE 9)|!(IE)]><!-->
+<html class="not-ie" lang="en">
+<!--<![endif]-->
+
+<head>
+    <meta charset="utf-8">
+    <title>Kandy Software ⊳ Blog</title>
+
+    <meta name="author" content="Vijay Kandy">
+    <meta name="description" content="Software Development and Consultancy">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    <link href="../../../../css/style.min.css" rel="stylesheet">
+    <link href="../../../../css/font-awesome/font-awesome.css" rel="stylesheet">
+    <!--[if IE 7]>
+    <link href="../../../../css/font-awesome/font-awesome-ie7.css" rel="stylesheet">
+    <![endif]-->
+
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800' rel='stylesheet' type='text/css'>
+
+    <!--[if lt IE 9]>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <script>
+        !window.jQuery && document.write(unescape('%3Cscript src="js/jquery-1.8.3.min.js"%3E%3C/script%3E'))
+    </script>
+
+    <link type="text/css" rel="stylesheet" href="../../../../css/shCoreDefault.css"/>
+</head>
+
+<body>
+<header id="header">
+    <div class="navbar">
+        <div class="navbar-inner">
+            <div class="container">
+                <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </a>
+                <a class="brand" href="../../../../../../../">
+                    <b>Kandy</b>&nbsp;Software
+                </a>
+                <div class="nav-collapse">
+                    <ul class="nav">
+                        <li><a href="../../../../../../../">Home</a></li>
+                        <li><a href="../../../../services">Services</a></li>
+                        <li class="active"><a href="../../../../blog">Blog</a></li>
+                        <li><a href="../../../../about">About us</a></li>
+                        <li><a href="../../../../contact">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div id="content" class="container">
+    <div class="hero-unit">
+        <h1>To volatile, or not to volatile</h1>
+        <small>Vijay Kandy&nbsp;&nbsp;<i class="icon-calendar"></i>&nbsp;April 9, 2008</small>
+    </div>
+
+    <hr />
+
+    <div class="row" id="post">
+        <div class="span12">
+            <article class="post single-post image-post">
+                The other day someone asked me to demonstrate how <code>volatile</code> variables work in Java.
+                Heres an example. Consider a few threads that periodically check a shared flag.
+                If the flag is set to true (by another thread), the threads stop running.
+                I'll use <code>BusyTask</code> to simulate a long running process.
+                <code>BusyTask</code> checks a shared flag -- a member variable in <code>ShutdownDriver</code>.
+                <code>ShutdownDriver</code> starts <code>BusyTask</code>s and sets the shared flag to <code>true</code>
+                after sleeping for a few seconds. If the shared flag is not <code>volatile</code>, the
+                <code>BusyTask</code> keep running forever. This makes the case for <code>volatile</code>.
+
+
+<pre class="brush: java; first-line: 1;">
+/**
+ * @(#) ShutdownMonitor.java Apr 8, 2008 5:20:06 PM
+ */
+package sync.vol;
+
+/**
+ * Represents a busy process that <i>should</i> shutdown when
+ * <code>ShutdownDriver.shutdown</code> is set to <code>true</code>.
+ */
+public class BusyTask extends Thread {
+	private ShutdownDriver driver;
+
+	public BusyTask(ShutdownDriver driver) {
+		this.driver = driver;
+	}
+
+	/**
+	 * If another thread sets <code>ShutdownDriver.shutdown</code> to
+	 * <code>true</code> this thread should terminate.
+	 */
+	public void run() {
+		while (!driver.shutdown) {
+		}
+		System.out.println("Busy task stopped!");
+	}
+}
+</pre>
+
+<pre class="brush: java; first-line: 1;">
+/**
+ * @(#) ShutdownDriver.java Apr 8, 2008 5:23:15 PM
+ */
+package sync.vol;
+
+/**
+ * Flags for shutdown by setting <code>shutdown</code> to <code>true</code>.
+ */
+public class ShutdownDriver {
+	/**
+	 * This should be a volatile field!
+	 */
+	boolean shutdown = false;
+
+	/**
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		ShutdownDriver driver = new ShutdownDriver();
+		BusyTask task = new BusyTask(driver);
+		task.start();
+
+		try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		driver.shutdown = true;
+	}
+}
+</pre>
+
+                When <code>ShutdownDriver.shutdown</code> is not <code>volatile</code>, without the -server option, I never saw <code>Busy task stopped!</code> printed out.
+
+                <p>
+                    <b>NOTE:</b> When you use <code>-server</code> option, <a href="http://java.sun.com/j2se/1.4.2/docs/guide/vm/index.html" target="_blank">the VM optimizes your program for maximum speed</a>. So it is highly likely that with this option, <code>BusyTask</code> never terminates. My guess is with <code>-server</code> option, compiler optimizes aggressivley resulting in the variable <code>shutdown</code> being hoisted above the loop.
+                </p>
+                <p>
+                    <h3>Resources</h3>
+                    <ol>
+                        <li><a href="http://www.cs.umd.edu/~pugh/java/memoryModel/jsr-133-faq.html" target="_blank">http://www.cs.umd.edu/~pugh/java/memoryModel/jsr-133-faq.html</a></li>
+                        <li><a href="http://www.ibm.com/developerworks/java/library/j-jtp06197.html" target="_blank">http://www.ibm.com/developerworks/java/library/j-jtp06197.html</a></li>
+                        <li><a href="http://www.javaperformancetuning.com/tips/volatile.shtml" target="_blank">http://www.javaperformancetuning.com/tips/volatile.shtml</a></li>
+                    </ol>
+                </p>
+            </article>
+        </div>
+    </div>
+
+    <div class="clr"></div>
+
+    <hr />
+
+    <div class="row">
+        <div class="span12">
+            <ul class="tags">
+                <li><a href="#">java</a></li>
+                <li><a href="#">volatile</a></li>
+            </ul>
+
+            <section id="comments">
+            </section>
+        </div>
+    </div>
+</div>
+
+<p/>
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="span4">
+                <h3>Kandy Software Inc.</h3>
+                <ul>
+                    <li><a href="../../../../../" title="">Home</a></li>
+                    <li><a href="../../../../services" title="">Services</a></li>
+                    <li><a href="../../../../about" title="">About us</a></li>
+                    <li><a href="../../../../contact" title="">Contact</a></li>
+                </ul>
+            </div>
+            <div class="span4 social-networks">
+                <h3>Stay in touch</h3>
+                <p>Stay in touch on social networks</p>
+                <a href="https://github.com/vkandy" title="Github" class="icon-github"></a>
+                <a href="https://www.linkedin.com/in/vijaykandy" title="Linked In" class="icon-linkedin"></a>
+            </div>
+            <div class="span4">
+                <h3>Newsletter</h3>
+                <p>Subscribe to our monthly newsletter and be the first to know about our news and special deals!</p>
+                <form>
+                    <input type="text" placeholder="Enter your E-mail" />
+                    <input type="submit" class="btn" value="Ok" />
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="footer-extra">
+        <div class="container">
+            <div class="row">
+                <div class="span4">
+                    &copy; 2013 Kandy Software Inc.
+                </div>
+                <div class="span4">
+                </div>
+                <div class="span4">
+                    <i class="icon-envelope"></i> &nbsp; admin@kandysoftware.com
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script type="text/javascript" src="../../../../js/bootstrap.min.js"></script>
+<script type="text/javascript" src="../../../../js/jquery.isotope.min.js"></script>
+<script type="text/javascript" src="../../../../js/jquery.touchSwipe.js"></script>
+<script type="text/javascript" src="../../../../js/jquery.hotkeys.min.js"></script>
+<script type="text/javascript" src="../../../../js/functions.min.js?v=2"></script>
+<script type="text/javascript" src="../../../../js/shCore.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushPlain.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushJava.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushBash.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushErlang.js"></script>
+<script type="text/javascript">SyntaxHighlighter.all();</script>
+</body>
+
+</html>

@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<!--[if lt IE 7 ]><html class="ie ie6" lang="en"> <![endif]-->
+<!--[if IE 7 ]><html class="ie ie7" lang="en"> <![endif]-->
+<!--[if IE 8 ]><html class="ie ie8" lang="en"> <![endif]-->
+<!--[if (gte IE 9)|!(IE)]><!-->
+<html class="not-ie" lang="en">
+<!--<![endif]-->
+
+<head>
+    <meta charset="utf-8">
+    <title>Kandy Software ⊳ Blog</title>
+
+    <meta name="author" content="Vijay Kandy">
+    <meta name="description" content="Software Development and Consultancy">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    <link href="../../../../css/style.min.css" rel="stylesheet">
+    <link href="../../../../css/font-awesome/font-awesome.css" rel="stylesheet">
+    <!--[if IE 7]>
+    <link href="../../../../css/font-awesome/font-awesome-ie7.css" rel="stylesheet">
+    <![endif]-->
+
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800' rel='stylesheet' type='text/css'>
+
+    <!--[if lt IE 9]>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <script>
+        !window.jQuery && document.write(unescape('%3Cscript src="js/jquery-1.8.3.min.js"%3E%3C/script%3E'))
+    </script>
+
+    <link type="text/css" rel="stylesheet" href="../../../../css/shCoreDefault.css"/>
+</head>
+
+<body>
+<header id="header">
+    <div class="navbar">
+        <div class="navbar-inner">
+            <div class="container">
+                <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </a>
+                <a class="brand" href="../../../../../../../">
+                    <b>Kandy</b>&nbsp;Software
+                </a>
+                <div class="nav-collapse">
+                    <ul class="nav">
+                        <li><a href="../../../../../../../">Home</a></li>
+                        <li><a href="../../../../services">Services</a></li>
+                        <li class="active"><a href="../../../../blog">Blog</a></li>
+                        <li><a href="../../../../about">About us</a></li>
+                        <li><a href="../../../../contact">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div id="content" class="container">
+    <div class="hero-unit">
+        <h1>Pausing message delivery in WebSphere</h1>
+        <small>Vijay Kandy&nbsp;&nbsp;<i class="icon-calendar"></i>&nbsp;March 24, 2008</small>
+    </div>
+
+    <hr />
+
+    <div class="row" id="post">
+        <div class="span12">
+            <article class="post single-post image-post">
+                <p>
+                The advantage of using JMS Queues or Topics is that messages can be processed asynchronously. Sometimes you need to pause the processing temporarily. Say for example, your messages write data to a database but the database is shutdown in the evenings. What do you do with the messages in the Queue or Topic? The JMS API says that invoking <code>stop()</code> on the <code>Connection</code> object but how do you obtain <code>Connection</code> reference of the MDB?
+                </p>
+                <p>
+                In WebSphere, message delivery is controlled by a <b>Listener Port</b>. What you can do is get hold of ListenerPort's MBean and call operations on that. Use <b>wsadmin</b> tool to view MBeans available in WebSphere. If you have WebSphere make sure it's <b>bin</b> folder is in PATH. To start the <b>wsadmin</b> tool, make sure WebSphere is started and in a shell, type the following:
+                </p>
+<pre class="brush: text; first-line: 1;">
+C:\>wsadmin
+WASX7209I: Connected to process "server1" on node WS-3391 using SOAP connector;
+The type of process is: UnManagedProcess
+WASX7029I: For help, enter: "$Help help"
+
+wsadmin>$AdminControl queryNames *:*,type=ListenerPort
+WebSphere:platform=common,cell=vkandy1,version=5.0,
+name=KSIDemoTopicListener,mbeanIdentifier=com.ibm.websphere.models.config.
+applicationserver.ejbcontainer.messagelistener.impl.ListenerPortImpl,
+type=ListenerPort,node=vkandy1,process=server1
+wsadmin>
+</pre>
+
+                This prints out all the listener ports declared in WebSphere. In this scenario, you can see I have a listener port named <i>KSIDemoTopicListener</i>. Every listener port in WebSphere has an MBean associated with it. You can get reference to this MBean and invoke <code>stop()</code> and <code>start()</code> methods on it temporarily pause message delivery. The following servlet demonstrates how to invoke MBean methods.
+
+<pre class="brush: java; first-line: 1;">
+/**
+ * @(#)ControlMessageDeliveryServlet.java	Mar 12, 2008
+ */
+package com.allstream.icms.oe.web;
+
+import java.io.IOException;
+import java.util.Set;
+
+import javax.management.InstanceNotFoundException;
+import javax.management.IntrospectionException;
+import javax.management.MBeanException;
+import javax.management.MBeanInfo;
+import javax.management.ObjectName;
+import javax.management.ReflectionException;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import com.ibm.websphere.management.AdminService;
+import com.ibm.websphere.management.AdminServiceFactory;
+
+/**
+ * Servlet to control MEssage Delivery
+ *
+ * @author $Author: Kandy Software Inc.$
+ * @version $Revision: 1.0$
+ */
+public class ControlMessageDeliveryServlet extends HttpServlet {
+	/**
+	 * Processes GET requests
+	 */
+	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		doGet(request, response);
+	}
+
+	/**
+	 * Processes GET requests
+	 */
+	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		try {
+			String command = request.getParameter("cmd");
+			Object params[] = {};
+			String signature[] = {};
+			String listnerPort = "*:*,type=ListenerPort,name=KSIDemoTopicListener";
+			ObjectName queryName = new ObjectName(listnerPort);
+			if (command.equalsIgnoreCase("start")) {
+				invokeMethodOnMBean(queryName, "start", params, signature);
+			} else if (command.equalsIgnoreCase("stop")) {
+				invokeMethodOnMBean(queryName, "start", params, signature);
+			}
+		} catch (Exception e) {
+			// do something ...
+		}
+	}
+
+	protected Object invokeMethodOnMBean(final ObjectName queryName, final String operationName, final Object[] params,
+			final String[] signature) {
+		Object result = null;
+
+		try {
+			AdminService adminService = AdminServiceFactory.getAdminService();
+			Set s = adminService.queryNames(queryName, null);
+			if (!s.isEmpty()) {
+				ObjectName mBean = (ObjectName) s.iterator().next();
+				MBeanInfo mBeanInfo = adminService.getMBeanInfo(mBean);
+				// Invoke to print all methods exposed by this MBean
+				// getJavadoc(mBeanInfo);
+				result = adminService.invoke(mBean, operationName, params, signature);
+			}
+		} catch (InstanceNotFoundException e) {
+		} catch (IntrospectionException e) {
+		} catch (ReflectionException e) {
+		} catch (MBeanException e) {
+		}
+		return result;
+	}
+}
+</pre>
+
+                Optionally you can add this method to print out all methods an MBean exposes.
+
+<pre class="brush: java; first-line: 1;">
+	/**
+	 * Prints all operations available on an MBean
+	 *
+	 * @param mBeanInfo
+	 * @return
+	 */
+	public String getJavadoc(MBeanInfo mBeanInfo) {
+		StringBuffer javadoc = new StringBuffer();
+		MBeanOperationInfo operations[] = mBeanInfo.getOperations();
+		for (int index = 0; index < operations.length; index++) {
+			MBeanOperationInfo operation = operations[index];
+			javadoc.append("\n");
+			javadoc.append("/**");
+			javadoc.append("\n");
+			javadoc.append("* ").append(operation.getDescription());
+			javadoc.append("\n");
+			javadoc.append("*/");
+			javadoc.append("\n");
+			javadoc.append(operation.getReturnType() + " " + operation.getName() + " (");
+			MBeanParameterInfo signature[] = operation.getSignature();
+			if (signature.length > 0) {
+				javadoc.append("\n");
+				for (int i = 0; i < signature.length; i++) {
+					javadoc.append(signature[i].getType());
+					javadoc.append(" ");
+					javadoc.append(signature[i].getName());
+					javadoc.append(" //");
+					javadoc.append(signature[i].getDescription());
+					javadoc.append("\n");
+				}
+			}
+			javadoc.append(");");
+		}
+		return javadoc.toString();
+	}
+</pre>
+            </article>
+        </div>
+    </div>
+
+    <div class="clr"></div>
+
+    <hr />
+
+    <div class="row">
+        <div class="span12">
+            <ul class="tags">
+                <li><a href="#">jms</a></li>
+                <li><a href="#">websphere</a></li>
+                <li><a href="#">pause</a></li>
+                <li><a href="#">stop</a></li>
+            </ul>
+
+            <section id="comments">
+            </section>
+        </div>
+    </div>
+</div>
+
+<p/>
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="span4">
+                <h3>Kandy Software Inc.</h3>
+                <ul>
+                    <li><a href="../../../../../" title="">Home</a></li>
+                    <li><a href="../../../../services" title="">Services</a></li>
+                    <li><a href="../../../../about" title="">About us</a></li>
+                    <li><a href="../../../../contact" title="">Contact</a></li>
+                </ul>
+            </div>
+            <div class="span4 social-networks">
+                <h3>Stay in touch</h3>
+                <p>Stay in touch on social networks</p>
+                <a href="https://github.com/vkandy" title="Github" class="icon-github"></a>
+                <a href="https://www.linkedin.com/in/vijaykandy" title="Linked In" class="icon-linkedin"></a>
+            </div>
+            <div class="span4">
+                <h3>Newsletter</h3>
+                <p>Subscribe to our monthly newsletter and be the first to know about our news and special deals!</p>
+                <form>
+                    <input type="text" placeholder="Enter your E-mail" />
+                    <input type="submit" class="btn" value="Ok" />
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="footer-extra">
+        <div class="container">
+            <div class="row">
+                <div class="span4">
+                    &copy; 2013 Kandy Software Inc.
+                </div>
+                <div class="span4">
+                </div>
+                <div class="span4">
+                    <i class="icon-envelope"></i> &nbsp; admin@kandysoftware.com
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script type="text/javascript" src="../../../../js/bootstrap.min.js"></script>
+<script type="text/javascript" src="../../../../js/jquery.isotope.min.js"></script>
+<script type="text/javascript" src="../../../../js/jquery.touchSwipe.js"></script>
+<script type="text/javascript" src="../../../../js/jquery.hotkeys.min.js"></script>
+<script type="text/javascript" src="../../../../js/functions.min.js?v=2"></script>
+<script type="text/javascript" src="../../../../js/shCore.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushPlain.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushJava.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushBash.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushXml.js"></script>
+<script type="text/javascript">SyntaxHighlighter.all();</script>
+</body>
+
+</html>

@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<!--[if lt IE 7 ]><html class="ie ie6" lang="en"> <![endif]-->
+<!--[if IE 7 ]><html class="ie ie7" lang="en"> <![endif]-->
+<!--[if IE 8 ]><html class="ie ie8" lang="en"> <![endif]-->
+<!--[if (gte IE 9)|!(IE)]><!-->
+<html class="not-ie" lang="en">
+<!--<![endif]-->
+
+<head>
+    <meta charset="utf-8">
+    <title>Kandy Software ⊳ Blog</title>
+
+    <meta name="author" content="Vijay Kandy">
+    <meta name="description" content="Software Development and Consultancy">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    <link href="../../../../css/style.min.css" rel="stylesheet">
+    <link href="../../../../css/font-awesome/font-awesome.css" rel="stylesheet">
+    <!--[if IE 7]>
+    <link href="../../../../css/font-awesome/font-awesome-ie7.css" rel="stylesheet">
+    <![endif]-->
+
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800' rel='stylesheet' type='text/css'>
+
+    <!--[if lt IE 9]>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <script>
+        !window.jQuery && document.write(unescape('%3Cscript src="js/jquery-1.8.3.min.js"%3E%3C/script%3E'))
+    </script>
+
+    <link type="text/css" rel="stylesheet" href="../../../../css/shCoreDefault.css"/>
+</head>
+
+<body>
+<header id="header">
+    <div class="navbar">
+        <div class="navbar-inner">
+            <div class="container">
+                <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </a>
+                <a class="brand" href="../../../../../../../">
+                    <b>Kandy</b>&nbsp;Software
+                </a>
+                <div class="nav-collapse">
+                    <ul class="nav">
+                        <li><a href="../../../../../../../">Home</a></li>
+                        <li><a href="../../../../services">Services</a></li>
+                        <li class="active"><a href="../../../../blog">Blog</a></li>
+                        <li><a href="../../../../about">About us</a></li>
+                        <li><a href="../../../../contact">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div id="content" class="container">
+    <div class="hero-unit">
+        <h1>Customizing java.sql.Connection, app server independent manner</h1>
+        <small>Vijay Kandy&nbsp;&nbsp;<i class="icon-calendar"></i>&nbsp;May 27, 2008</small>
+    </div>
+
+    <hr />
+
+    <div class="row" id="post">
+        <div class="span12">
+            <article class="post single-post image-post">
+                This post explains how to customize a <code>java.sql.Connection</code> by overriding default properties. I demonstrate the topic by changing the isolation level of Connection object obtained from WebSphere server.
+
+                By default the connection obtained from WebSphere 5.1 JNDI has a transaction isolation level of "Repeatable Read". If you ever wanted to change this level today's post will show you how. When you obtain the connection within a transaction boundary, you are <em>not allowed</em> to change the isolation level (the behavior is implementation-defined). Most likely an exception will be thrown. This is especially a problem if you are running distributed transactions. You dont have a lot of control over the Connection object. So the only place you could changethe isolation level is before the transaction starts but how would you do this? You'll have to intercept the connection object before it can be used in the transaction boundary.
+
+                Normally, to obtain a connection you would do this:
+<pre class="brush: java; first-line: 1;">
+public static Connection getConnection(String jndiName) throws DataAccessException {
+	Connection connection = null;
+	try {
+		Context context = new InitialContext();
+		DataSource ds = (DataSource) context.lookup(jndiName);
+		connection = ds.getConnection();
+	} catch (ClassCastException e) {
+		logger.debug(e);
+		throw new RuntimeException(e);
+	} catch (NamingException e) {
+		logger.debug(e);
+		throw new RuntimeException(e);
+	} catch (Exception e) {
+		logger.debug(e);
+		throw new DataAccessException(e);
+	}
+
+	return connection;
+}</pre>
+                To customize the connection you'll need to understand a few WebSphere classes. The <code>DataSource</code> you obtain is an instance of <code>com.ibm.websphere.rsadapter.WSDataSource</code>. This class has an overloaded <code>getConnection()</code> method that takes a <code>com.ibm.websphere.rsadapter.JDBCConnectionSpec</code>. It is this class that controls the isolation level. The following code demonstrates this logic:
+<pre class="brush: java; first-line: 1;">
+import com.ibm.websphere.rsadapter.*;
+// ...
+
+JDBCConnectionSpec connSpec = WSRRAFactory.createJDBCConnectionSpec();
+connSpec.setTransactionIsolation(CONNECTION.TRANSACTION_REPEATABLE_READ);
+// connSpec.setXXX() set other properties you want
+
+Connection connection = ((WSDataSource)datasource).getConnection(connSpec);</pre>
+                Note that this solution is not portable across containers. But using reflection you <em>can</em> make the solution portable. I'll use an abstract class called <code>DataSourceCustomizer</code> and a helper class <code>ConnectionProvider</code> to obtain the connection after customizing it.
+
+<pre class="brush: java; first-line: 1;">
+/**
+ * @(#)WebSphereDataSourceCustomizer.java	May 22, 2007
+ */
+
+import java.lang.reflect.Method;
+import java.sql.Connection;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
+
+/**
+ * Adds/overrides properties of a <code>WSDataSource</code> class. This is to
+ * be used with WebSphere 5.1 version. This class uses reflection and WebSphere
+ * APIs to set isolation level.
+ *
+ * @author $Author: vijaykandy $
+ * @version $Revision: 1.1 $
+ */
+public class WebSphereDataSourceCustomizer extends DataSourceCustomizer {
+
+	protected Class WSDataSourceClass;
+
+	protected Class JDBCConnectionSpecClass;
+
+	protected Class WSRRAFactoryClass;
+
+	protected Method createJDBCConnectionSpecMethod;
+
+	protected Method getConnectionMethod;
+
+	protected Method setTransactionIsolationMethod;
+
+	public WebSphereDataSourceCustomizer() {
+		init();
+	}
+
+	public WebSphereDataSourceCustomizer(Map map) {
+		super(map);
+		init();
+	}
+
+	public WebSphereDataSourceCustomizer(HashMap map) {
+		super(map);
+		init();
+	}
+
+	private void init() {
+		ClassLoader classLoader = ReflectionUtil.getClassLoader();
+		try {
+			WSDataSourceClass = classLoader.loadClass("com.ibm.websphere.rsadapter.WSDataSource");
+			JDBCConnectionSpecClass = classLoader.loadClass("com.ibm.websphere.rsadapter.JDBCConnectionSpec");
+			WSRRAFactoryClass = classLoader.loadClass("com.ibm.websphere.rsadapter.WSRRAFactory");
+			createJDBCConnectionSpecMethod = WSRRAFactoryClass.getMethod("createJDBCConnectionSpec", null);
+			getConnectionMethod = WSDataSourceClass.getMethod("getConnection", new Class[] { JDBCConnectionSpecClass });
+
+			Class args[] = new Class[] { int.class };
+			setTransactionIsolationMethod = JDBCConnectionSpecClass.getMethod("setTransactionIsolation", args);
+		} catch (SecurityException e) {
+			throw new RuntimeException(e);
+		} catch (ClassNotFoundException e) {
+			throw new RuntimeException(e);
+		} catch (NoSuchMethodException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * The following logic is executed using reflection:
+	 *
+	 * <code>
+    * int level = ... a level defined by the client ...
+    * JDBCConnectionSpec jdbcConnectionSpec = WSRRAFactory.createJDBCConnectionSpec();
+    * jdbcConnectionSpec.setTransactionIsolation(level);
+    * Connection connection = ((WSDataSource) datasource).getConnection(jdbcConnectionSpec);
+    * </code>
+	 *
+	 * @throws NamingException
+	 */
+	public Connection getConnection(String jndiName) throws NamingException {
+
+		// Lookup the DataSource located at the given location
+		Context context = new InitialContext();
+		DataSource ds = (DataSource) context.lookup(jndiName);
+
+		// createJDBCConnectionSpec() is a static method
+		Object jdbcConnectionSpec = ReflectionUtil.invokeMethod(createJDBCConnectionSpecMethod, null, null);
+
+		// Set the isolation level
+		if (map.containsKey(ISOLATION_LEVEL)) {
+			Integer isolationLevel = (Integer) map.get(ISOLATION_LEVEL);
+			Object args[] = new Object[] { isolationLevel };
+			ReflectionUtil.invokeMethod(setTransactionIsolationMethod, jdbcConnectionSpec, args);
+		}
+
+		Object args[] = new Object[] { jdbcConnectionSpec };
+		Connection connection = (Connection) ReflectionUtil.invokeMethod(getConnectionMethod, ds, args);
+		return connection;
+	}
+
+}
+</pre>
+
+                The class <code>ConnectionProvider</code> serves as a facade.
+
+<pre class="brush: java; first-line: 1;">
+/**
+ * Retrieves connection after applying properties passed as argument.
+ *
+ * @param jndiName
+ * @param supplementClass
+ * @return
+ * @throws NamingException
+ */
+public static Connection getConnection(String jndiName, String supplementClass, Map map) throws NamingException {
+	Object args[] = new Object[] { map };
+	DataSourceCustomizer supplement = (DataSourceCustomizer) ReflectionUtil.newInstance(supplementClass, args);
+	return supplement.getConnection(jndiName);
+}
+</pre>
+
+                Now you can use these classes like so:
+
+<pre class="brush: java; first-line: 1;">
+/**
+ * @(#)Test.java	May 27, 2008
+ */
+import java.sql.Connection;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Tests a connection. Preferred way would be to use a properties file that can
+ * be read by <code>Class.getInputStream()</code> and dynamically set the
+ * customizer class property.
+ *
+ * @author $Author: vijaykandy $
+ * @version $Revision: 1.1 $
+ */
+public class Test {
+
+	/**
+	 * @param args
+	 */
+	public static void main(String[] args) throws Exception {
+		String jndiName = "jdbc/MyDS";
+		String customizerClass = "WebSphereDataSourceCustomizer";
+
+		// Set isolation level to Connection.TRANSACTION_READ_COMMITTED
+		Map properties = new HashMap();
+		properties.put("ISOLATION_LEVEL", new Integer(2));
+
+		Connection connection = ConnectionProvider.getConnection(jndiName, customizerClass, properties);
+	}
+}
+</pre>
+
+                All source code is attached here. No WebSphere classes are need to compile (that was the whole point anyway!).
+                <h3>Resources</h3>
+                [1] <a href="http://publib.boulder.ibm.com/infocenter/wasinfo/v6r0/index.jsp?topic=/com.ibm.websphere.base.doc/info/aes/ae/rdat_extiapi.html" target="_blank">IBM Example 1</a>
+                [2] <a href="http://publib.boulder.ibm.com/infocenter/wasinfo/v5r1//index.jsp?topic=/com.ibm.websphere.base.doc/info/aes/ae/rdat_extiapi2.html" target="_blank">IBM Example 2</a>
+                <h3>Complete Source Code</h3>
+                <a title="source code" href="customize-java-sql-connection.zip">customize-java-sql-connection.zip</a>
+            </article>
+        </div>
+    </div>
+
+    <div class="clr"></div>
+
+    <hr />
+
+    <div class="row">
+        <div class="span12">
+            <ul class="tags">
+                <li><a href="#">java</a></li>
+                <li><a href="#">sql</a></li>
+                <li><a href="#">connection</a></li>
+                <li><a href="#">custom</a></li>
+            </ul>
+
+            <section id="comments">
+            </section>
+        </div>
+    </div>
+</div>
+
+<p/>
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="span4">
+                <h3>Kandy Software Inc.</h3>
+                <ul>
+                    <li><a href="../../../../../" title="">Home</a></li>
+                    <li><a href="../../../../services" title="">Services</a></li>
+                    <li><a href="../../../../about" title="">About us</a></li>
+                    <li><a href="../../../../contact" title="">Contact</a></li>
+                </ul>
+            </div>
+            <div class="span4 social-networks">
+                <h3>Stay in touch</h3>
+                <p>Stay in touch on social networks</p>
+                <a href="https://github.com/vkandy" title="Github" class="icon-github"></a>
+                <a href="https://www.linkedin.com/in/vijaykandy" title="Linked In" class="icon-linkedin"></a>
+            </div>
+            <div class="span4">
+                <h3>Newsletter</h3>
+                <p>Subscribe to our monthly newsletter and be the first to know about our news and special deals!</p>
+                <form>
+                    <input type="text" placeholder="Enter your E-mail" />
+                    <input type="submit" class="btn" value="Ok" />
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="footer-extra">
+        <div class="container">
+            <div class="row">
+                <div class="span4">
+                    &copy; 2013 Kandy Software Inc.
+                </div>
+                <div class="span4">
+                </div>
+                <div class="span4">
+                    <i class="icon-envelope"></i> &nbsp; admin@kandysoftware.com
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script type="text/javascript" src="../../../../js/bootstrap.min.js"></script>
+<script type="text/javascript" src="../../../../js/jquery.isotope.min.js"></script>
+<script type="text/javascript" src="../../../../js/jquery.touchSwipe.js"></script>
+<script type="text/javascript" src="../../../../js/jquery.hotkeys.min.js"></script>
+<script type="text/javascript" src="../../../../js/functions.min.js?v=2"></script>
+<script type="text/javascript" src="../../../../js/shCore.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushPlain.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushJava.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushBash.js"></script>
+<script type="text/javascript" src="../../../../js/shBrushErlang.js"></script>
+<script type="text/javascript">SyntaxHighlighter.all();</script>
+</body>
+
+</html>

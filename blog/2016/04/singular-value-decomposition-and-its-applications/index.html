@@ -72,7 +72,8 @@
     <div class="hero-unit">
         <h1>Singular Value Decomposition (SVD) and its applications</h1>
         <p>Introduction to singular value decomposition and applications of low rank approximations</p>
-        <small>Vijay Kandy&nbsp;&nbsp;<i class="icon-calendar"></i>&nbsp;March 27, 2016</small>
+        <h3 class="text-error">Work in progress...</h3>
+        <small>Vijay Kandy&nbsp;&nbsp;<i class="icon-calendar"></i>&nbsp;</small>
     </div>
 
     <hr />
@@ -81,7 +82,24 @@
         <div class="span12">
             <article class="post single-post image-post">
                 <div class="entry-content">
-
+                    <h1>Introduction</h1>
+                    <p>
+                        Singular Value Decomposition (SVD) is based on a theorem from linear algebra that says a rectangular matrix $A$ can be represented as a product of three matrices:
+                        <ol>
+                            <li>an orthogonal matrix $U$ (i.e., $UU^T = I$)</li>
+                            <li>a diagonal matrix $\Sigma$ and</li>
+                            <li>the transpose of an orthogonal matrix $V$ (i.e., $V^TV = I$)</li>
+                        </ol>
+                        Formally,
+                        $$A_{mxn} = U_{mXm} \Sigma_{mxn} V^T_{nxn}$$
+                        The columns of $U_{mxn}$ are eigenvectors of $AA^T$, the columns of $V_{nxn}$ are eigenvectors of $A^TA$ and the elements $\sigma_1, ... \sigma_r$ of the diagonal
+                        matrix $\Sigma$ are the square roots of the non-zero eigenvalues of both $AA^T$ and $A^TA$. They are the eigenvalues or <strong>singular values</strong> of $A$.
+                    </p>
+                    <p>
+                        An eigenvector is a non-zero vector that satisfies the equation:
+                        $$A\vec{v} = \lambda\vec{v}$$
+                    </p>
+                    <h1>Factorize a small matrix</h1>
                 </div>
             </article>
         </div>
